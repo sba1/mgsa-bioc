@@ -2,6 +2,10 @@
  * @file mgsa.c
  *
  * @author Sebastian Bauer
+ *
+ * @note if you want to compile as standalone, invoke
+ *
+ *  "gcc mgsa.c -DSTANDALONE `R CMD config --cppflags` `R CMD config --ldflags` -o mgsa"
  */
 #include <stdio.h>
 
@@ -13,10 +17,13 @@
 /* Enable debugging */
 #define DEBUG
 
+/* Define if file should be compiled as standalone (mainly for testing purposes) */
+/* #define STANDALONE */
+
 /**
- * The work-horse.
+ * The work horse.
  *
- * @param sets pointer to the sets
+ * @param sets pointer to the sets. Sets a made of observable entities.
  * @param sizes_of_sets specifies the length of each set
  * @param number_of_sets number of sets (length of sets)
  * @param n the number of observable entities.
@@ -74,7 +81,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p)
 	for (i=0;i<lo;i++)
 		no[i] = xo[i] - 1;
 
-	/* Set associations  */
+	/* Set associations. Turn 1 based observations indices into 0 based ones */
 	lsets = LENGTH(sets);
 	if (!(lset = (int*)R_alloc(lsets,sizeof(lset[0]))))
 		goto bailout;
@@ -132,3 +139,20 @@ void R_unload_mylib(DllInfo *info)
 {
   /* Release resources. */
 }
+
+#ifdef STANDALONE
+
+int main(void)
+{
+	int t1[] = {0,1};
+	int t2[] = {1,2};
+	int o[] = {0,1};
+
+	int *sets[] = {t1,t2};
+	int sizes_of_sets[] = {sizeof(t1)/sizeof(t1[0]),sizeof(t2)/sizeof(t2[0])};
+
+	do_mgsa_mcmc(sets, sizes_of_sets, sizeof(sets)/sizeof(sets[0]), 3, o, sizeof(o)/sizeof(o[0]));
+
+}
+
+#endif
