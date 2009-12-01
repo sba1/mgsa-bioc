@@ -10,32 +10,46 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
+/* Enable debugging */
+#define DEBUG
 
 /**
  * The work-horse.
  *
  * @param sets pointer to the sets
- * @param lset specifies the length of each set
- * @param lsets number of sets (length of sets)
+ * @param sizes_of_sets specifies the length of each set
+ * @param number_of_sets number of sets (length of sets)
  * @param n the number of observable entities.
  * @param o indices of entities which are "on" (0 based).
  * @param lo length of o
  */
-static void do_mgsa_mcmc(int **sets, int *lset, int lsets, int n, int *o, int lo)
+static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo)
 {
-	int i;
+	int i,j;
+#ifdef DEBUG
 
-	printf("n=%d\n",n);
+	for (i=0;i<number_of_sets;i++)
+	{
+		printf(" %d: ", sizes_of_sets[i]);
+		for (j=0;j<sizes_of_sets[i];j++)
+			printf("%d ", sets[i][j]);
+		printf("\n");
+	}
+
+	printf(" n=%d\n",n);
 
 	for (i=0;i<lo;i++)
 	{
 		printf(" o[%d]=%d\n",i,o[i]);
 	}
+#endif
 }
 
 /**
  * @param n the number of observable entities.
  * @param o (1 based)
+ *
+ * @note TODO: Check whether sets are real sets.
  */
 SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p)
 {
@@ -71,17 +85,19 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p)
 		int *xset;
 
 		SEXP set = VECTOR_ELT(sets, i);
+
 		PROTECT(set = AS_INTEGER(set));
 		lset[i] = LENGTH(set);
+		xset = INTEGER_POINTER(set);
 		if (!(nsets[i] = (int*)R_alloc(lset[i],sizeof(nsets[i][0]))))
 		{
 			UNPROTECT(1);
 			goto bailout;
 		}
 
-		xset = INTEGER_POINTER(o);
+		xset = INTEGER_POINTER(set);
 		for (j=0;j<lset[i];j++)
-			nsets[i][j] = lset[i];
+			nsets[i][j] = xset[j];
 		UNPROTECT(1);
 	}
 
