@@ -1,0 +1,9 @@
+Package: mgsa
+Version: 0.1-1
+Date: 2009-11-17
+Title: Model-based gene set analysis
+Author: Sebastian Bauer <Sebastian.Bauer@charite.de>
+Maintainer: Sebastian Bauer <Sebastian.Bauer@charite.de>
+Depends: R (>= 2.9.0)
+Description: Model-based gene set analysis
+License: GPL (>= 2)
