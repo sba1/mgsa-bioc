@@ -20,6 +20,21 @@
 /* Define if file should be compiled as standalone (mainly for testing purposes) */
 /* #define STANDALONE */
 
+struct context
+{
+	/** @brief Number of sets */
+	int number_of_sets;
+
+	/** @brief Array of size "number_of_sets" indicating the state of the sets (active or not active) */
+	int *sets_active;
+
+	/** @brief Number of observable */
+	int number_of_observable;
+
+	/** @brief Array indicating whether a observable is active or not */
+	int *observable;
+};
+
 /**
  * The work horse.
  *
@@ -33,6 +48,8 @@
 static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo)
 {
 	int i,j;
+	struct context context;
+
 #ifdef DEBUG
 
 	for (i=0;i<number_of_sets;i++)
@@ -50,6 +67,21 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 		printf(" o[%d]=%d\n",i,o[i]);
 	}
 #endif
+
+	context.number_of_sets = number_of_sets;
+	context.number_of_observable = n;
+	if (!(context.observable = (int*)R_alloc(n,sizeof(context.observable[0]))))
+		goto bailout;
+	memset(context.observable,0,n * sizeof(context.observable[0]));
+	for (i=0;i<lo;i++)
+		context.observable[o[i]] = 1;
+	if (!(context.sets_active = (int*)R_alloc(number_of_sets,sizeof(context.sets_active[0]))))
+		goto bailout;
+	memset(context.sets_active,0,number_of_sets * sizeof(context.sets_active[0]));
+
+
+bailout:
+	return;
 }
 
 /**
