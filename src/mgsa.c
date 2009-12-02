@@ -110,6 +110,11 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
 
+	/* Initially, no set is active, hence all observables that are true are false positive... */
+	cn->n10 = lo;
+	/* while the rest are true negative */
+	cn->n00 = n - lo;
+
 	return 1;
 
 bailout:
