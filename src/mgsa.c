@@ -10,6 +10,8 @@
  *  If you want to test using R something like
  *
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(2,1,3),c(1,2,3)),10,o=c(3,1),4,5,6)" | R --vanilla)"
+ *  or (for the test function)
+ *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
 #include <stdio.h>
 
@@ -346,8 +348,36 @@ bailout:
 	return NULL_USER_OBJECT;
 }
 
+
+static void print_ns(struct context *context)
+{
+
+}
+
+/**
+ * A simple test function for lowlevel functions.
+ *
+ * @return
+ */
+SEXP mgsa_test(void)
+{
+	struct context cn;
+	int t1[] = {0,1};
+	int t2[] = {1,2};
+	int o[] = {0,1};
+
+	int *sets[] = {t1,t2};
+	int sizes_of_sets[] = {sizeof(t1)/sizeof(t1[0]),sizeof(t2)/sizeof(t2[0])};
+
+	init_context(&cn,sets,sizes_of_sets,sizeof(sets)/sizeof(sets[0]),3,o,sizeof(o)/sizeof(o[0]));
+
+	return NULL_USER_OBJECT;
+}
+
+
 R_CallMethodDef callMethods[] = {
    {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 6},
+   {"mgsa_test", (DL_FUNC)&mgsa_test, 0},
    {NULL, NULL, 0}
 };
 
