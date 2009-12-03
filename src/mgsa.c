@@ -34,11 +34,20 @@ struct context
 	/** @brief Sizes of sets */
 	int *sizes_of_sets;
 
-	/** The definitions of the sets */
+	/** @brief The definitions of the sets */
 	int **sets;
 
 	/** @brief Array of size "number_of_sets" indicating the state of the sets (active or not active) */
 	int *sets_active;
+
+	/** @brief number of active sets */
+	int number_of_inactive_sets;
+
+	/** @brief contains indices of sets that are inactive */
+	int *set_inactive_list;
+
+	/** @brief array that reflects the position of elements in set_inactive_list */
+	int *position_of_set_in_inactive_list;
 
 	/** @brief Number of observable */
 	int number_of_observable;
@@ -66,9 +75,6 @@ struct context
 	double alpha;
 	double beta;
 	double p;
-
-	/** @brief the current score */
-	double score;
 };
 
 /**
@@ -96,6 +102,16 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	if (!(cn->sets_active = (int*)R_alloc(number_of_sets,sizeof(cn->sets_active[0]))))
 		goto bailout;
 	memset(cn->sets_active,0,number_of_sets * sizeof(cn->sets_active[0]));
+	if (!(cn->set_inactive_list = (int*)R_alloc(number_of_sets,sizeof(cn->set_inactive_list[0]))))
+		goto bailout;
+	if (!(cn->position_of_set_in_inactive_list = (int*)R_alloc(number_of_sets,sizeof(cn->position_of_set_in_inactive_list[0]))))
+		goto bailout;
+	for (i=0;i<number_of_sets;i++)
+	{
+		cn->set_inactive_list[i] = i;
+		cn->position_of_set_in_inactive_list[i] = i;
+	}
+	cn->number_of_inactive_sets = number_of_sets;
 
 	if (!(cn->hidden_active = (int*)R_alloc(n,sizeof(cn->hidden_active[0]))))
 		goto bailout;
@@ -112,7 +128,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
 
-	/* Initially, no set is active, hence all observables that are true are false positive... */
+	/* Initially, no set is active, hence all observations that are true are false positive... */
 	cn->n10 = lo;
 	/* while the rest are true negative */
 	cn->n00 = n - lo;
@@ -185,7 +201,7 @@ static void add_set(struct context *cn, int to_add)
 		int member = cn->sets[to_add][i];
 		if (!cn->hidden_count[member])
 		{
-			/* A not yet active member is about to be activated, append it at the hidden_active list */
+			/* A not yet active member is about to be activated */
 //			cn->hidden_active[cn->number_of_hidden_active] = member;
 			cn->number_of_hidden_active++;
 			hidden_member_activated(cn,member);
@@ -193,7 +209,15 @@ static void add_set(struct context *cn, int to_add)
 		cn->hidden_count[member]++;
 	}
 
-	/* TODO: Update the inactive list */
+	/* Remove the added set from the inactive list */
+	cn->number_of_inactive_sets--;
+	if (cn->number_of_inactive_sets != 0)
+	{
+		int pos = cn->position_of_set_in_inactive_list[to_add];
+		int new = cn->set_inactive_list[cn->number_of_inactive_sets];
+		cn->set_inactive_list[pos] = new;
+		cn->position_of_set_in_inactive_list[new] = pos;
+	}
 }
 
 /**
@@ -223,7 +247,10 @@ static void remove_set(struct context *cn, int to_remove)
 		cn->hidden_count[member]--;
 	}
 
-	/* TODO: Update the active list */
+	/* Finally, add the removed set to the inactive list but remember the index */
+	cn->set_inactive_list[cn->number_of_inactive_sets] = to_remove;
+	cn->position_of_set_in_inactive_list[to_remove] = cn->number_of_inactive_sets;
+	cn->number_of_inactive_sets++;
 }
 
 /**
@@ -245,6 +272,60 @@ static void switch_state(struct context *cn, int to_switch)
 }
 
 /**
+ * Returns the current alpha.
+ *
+ * @param cn
+ * @return
+ */
+static double get_alpha(struct context *cn)
+{
+	return cn->alpha;
+}
+
+/**
+ * Returns the current beta.
+ *
+ * @param cn
+ * @return
+ */
+static double get_beta(struct context *cn)
+{
+	return cn->beta;
+}
+
+/**
+ * Returns the current p.
+ *
+ * @param cn
+ * @return
+ */
+static double get_p(struct context *cn)
+{
+	return cn->p;
+}
+
+/**
+ * @brief return the score of the current context.
+ *
+ * @param cn
+ * @return
+ */
+static double get_score(struct context *cn)
+{
+	double alpha = get_alpha(cn);
+	double beta = get_beta(cn);
+	double p = get_p(cn);
+
+	double score = log(alpha) * cn->n10 + log(1.0-alpha) * cn->n00 + log(1-beta)* cn->n11 + log(beta)*cn->n01;
+
+	/* apply prior */
+	score += p * (cn->number_of_sets - cn->number_of_inactive_sets) + (1.0-p) * cn->number_of_inactive_sets;
+
+	return score;
+
+}
+
+/**
  * The work horse.
  *
  * @param sets pointer to the sets. Sets a made of observable entities.
@@ -257,7 +338,10 @@ static void switch_state(struct context *cn, int to_switch)
 static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo)
 {
 	int i,j;
+	int64_t step;
+	int64_t number_of_steps = 100000;
 	struct context cn;
+	double score;
 
 #ifdef DEBUG
 
@@ -280,6 +364,12 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
 		goto bailout;
 
+	score = get_score(&cn);
+
+	for (step=0;step<number_of_steps;step++)
+	{
+
+	}
 
 bailout:
 	printf("huhu");
@@ -349,9 +439,9 @@ bailout:
 }
 
 
-static void print_ns(struct context *context)
+static void print_ns(struct context *cn)
 {
-
+	printf("n00=%d n01=%d n10=%d n11=%d\n",cn->n00,cn->n01,cn->n10,cn->n11);
 }
 
 /**
@@ -370,6 +460,10 @@ SEXP mgsa_test(void)
 	int sizes_of_sets[] = {sizeof(t1)/sizeof(t1[0]),sizeof(t2)/sizeof(t2[0])};
 
 	init_context(&cn,sets,sizes_of_sets,sizeof(sets)/sizeof(sets[0]),3,o,sizeof(o)/sizeof(o[0]));
+	printf("no active term: ");print_ns(&cn);
+	add_set(&cn,0); printf("t1 is active: ");print_ns(&cn);
+	remove_set(&cn,0);add_set(&cn,1); printf("t2 is active: ");print_ns(&cn);
+	add_set(&cn,0); printf("t1,t2 is active: ");print_ns(&cn);
 
 	return NULL_USER_OBJECT;
 }
