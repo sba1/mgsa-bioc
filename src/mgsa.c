@@ -14,6 +14,7 @@
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
 #include <stdio.h>
+#include <stdint.h>
 
 #include <R.h>
 #include <Rdefines.h>
@@ -43,7 +44,7 @@ struct context
 	/** @brief number of active sets */
 	int number_of_inactive_sets;
 
-	/** @brief contains indices of sets that are inactive */
+	/** @brief contains indices of sets that are inactive TODO: This really is a partition */
 	int *set_inactive_list;
 
 	/** @brief array that reflects the position of elements in set_inactive_list */
@@ -75,6 +76,14 @@ struct context
 	double alpha;
 	double beta;
 	double p;
+
+	/* Proposal related */
+	int proposal_toggle;
+	int proposal_s1;
+	int proposal_s2;
+	double old_alpha;
+	double old_beta;
+	double old_p;
 };
 
 /**
@@ -133,6 +142,10 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	/* while the rest are true negative */
 	cn->n00 = n - lo;
 
+	cn->alpha = 0.10;
+	cn->beta = 0.25;
+	cn->p = 1.0 / number_of_sets;
+
 	return 1;
 
 bailout:
@@ -149,7 +162,7 @@ static void hidden_member_activated(struct context *cn, int member)
 {
 	if (cn->observable[member])
 	{
-		/* observation is true positive rather than false postive
+		/* observation is true positive rather than false positive
 		 * (first digit represents the observation, the second the hidden state) */
 		cn->n11++;
 		cn->n10--;
@@ -214,10 +227,36 @@ static void add_set(struct context *cn, int to_add)
 	if (cn->number_of_inactive_sets != 0)
 	{
 		int pos = cn->position_of_set_in_inactive_list[to_add];
-		int new = cn->set_inactive_list[cn->number_of_inactive_sets];
-		cn->set_inactive_list[pos] = new;
-		cn->position_of_set_in_inactive_list[new] = pos;
+		int e0 = cn->set_inactive_list[cn->number_of_inactive_sets];
+		/* Move last element in the partition to left */
+		cn->set_inactive_list[pos] = e0;
+		cn->position_of_set_in_inactive_list[e0] = pos;
+		/* Let be the newly added term the first in the partition */
+		cn->set_inactive_list[cn->number_of_inactive_sets] = to_add;
+		cn->position_of_set_in_inactive_list[to_add] = cn->number_of_inactive_sets;
 	}
+
+#ifdef DEBUG
+	{
+		printf("Add of %d produced following inactive list:\n",to_add);
+		if (cn->number_of_inactive_sets == 0)
+			printf(" empty list\n");
+		for (i=0;i<cn->number_of_inactive_sets;i++)
+		{
+			int elem = cn->set_inactive_list[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+		}
+		printf("Add of %d produced following active list:\n",to_add);
+		if (cn->number_of_sets - cn->number_of_inactive_sets == 0)
+			printf(" empty list\n");
+		for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
+		{
+			int elem = cn->set_inactive_list[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+		}
+
+	}
+#endif
 }
 
 /**
@@ -247,10 +286,44 @@ static void remove_set(struct context *cn, int to_remove)
 		cn->hidden_count[member]--;
 	}
 
-	/* Finally, add the removed set to the inactive list but remember the index */
-	cn->set_inactive_list[cn->number_of_inactive_sets] = to_remove;
-	cn->position_of_set_in_inactive_list[to_remove] = cn->number_of_inactive_sets;
+	if (cn->number_of_inactive_sets != (cn->number_of_sets - 1))
+	{
+		int pos = cn->position_of_set_in_inactive_list[to_remove];
+		int e1 = cn->set_inactive_list[cn->number_of_inactive_sets];
+		cn->set_inactive_list[pos] = e1;
+		cn->position_of_set_in_inactive_list[e1] = pos;
+		cn->set_inactive_list[cn->number_of_inactive_sets] = to_remove;
+		cn->position_of_set_in_inactive_list[to_remove] = cn->number_of_inactive_sets;
+	}
 	cn->number_of_inactive_sets++;
+
+	/* Finally, add the removed set to the inactive list but remember the index */
+//	cn->set_inactive_list[cn->number_of_inactive_sets] = to_remove;
+//	cn->position_of_set_in_inactive_list[to_remove] = cn->number_of_inactive_sets;
+//	cn->number_of_inactive_sets++;
+
+#ifdef DEBUG
+	{
+		printf("Remove of %d produced following inactive list:\n",to_remove);
+		if (cn->number_of_inactive_sets == 0)
+			printf(" empty list\n");
+		for (i=0;i<cn->number_of_inactive_sets;i++)
+		{
+			int elem = cn->set_inactive_list[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+		}
+		printf("Remove of %d produced following active list:\n",to_remove);
+		if (cn->number_of_sets - cn->number_of_inactive_sets == 0)
+			printf(" empty list\n");
+		for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
+		{
+			int elem = cn->set_inactive_list[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+		}
+
+	}
+#endif
+
 }
 
 /**
@@ -305,6 +378,18 @@ static double get_p(struct context *cn)
 }
 
 /**
+ * Returns the size of the on/off neighborhood.
+ * @param cn
+ * @return
+ */
+static uint64_t get_neighborhood_size(struct context *cn)
+{
+	/* First part accounts for the toggles, second part for the exchanges */
+	return cn->number_of_sets + cn->number_of_inactive_sets * (cn->number_of_sets - cn->number_of_inactive_sets);
+
+}
+
+/**
  * @brief return the score of the current context.
  *
  * @param cn
@@ -326,6 +411,83 @@ static double get_score(struct context *cn)
 }
 
 /**
+ * @brief Proposes a new state which can be undone via undo_proposal()
+ * @param cn
+ */
+static void propose_state(struct context *cn)
+{
+	uint64_t possibilities = get_neighborhood_size(cn);
+
+	cn->proposal_toggle = -1;
+	cn->proposal_s1 = -1;
+	cn->proposal_s2 = -1;
+	cn->old_alpha = -1;
+	cn->old_beta = -1;
+	cn->old_p = -1;
+
+	if (unif_rand() < 0.5)
+	{
+		uint32_t proposal = (double)(unif_rand() * possibilities);
+
+		if (proposal < cn->number_of_sets)
+		{
+			/* on/off */
+			cn->proposal_toggle = proposal;
+			switch_state(cn,proposal);
+		}	else
+		{
+			int active_term_pos;
+			int inactive_term_pos;
+
+			proposal -= cn->number_of_sets;
+
+			active_term_pos = (int)(proposal / (cn->number_of_sets - cn->number_of_inactive_sets)) +  cn->number_of_inactive_sets;
+			inactive_term_pos = (int)(proposal % cn->number_of_inactive_sets);
+
+			cn->proposal_s1 = cn->set_inactive_list[active_term_pos];
+			cn->proposal_s2 = cn->set_inactive_list[inactive_term_pos];
+
+			switch_state(cn,cn->proposal_s1);
+			switch_state(cn,cn->proposal_s2);
+		}
+	} else
+	{
+		double which_param = unif_rand();
+		if (which_param < (1.0/3.0))
+		{
+			cn->old_alpha = cn->alpha;
+			cn->alpha = unif_rand();
+		} else if (which_param < (2.0/3.0))
+		{
+			cn->old_beta = cn->beta;
+			cn->beta = unif_rand();
+		} else
+		{
+			cn->old_p = cn->p;
+			cn->p = unif_rand() / 8; /* FIXME: */
+		}
+	}
+}
+
+/**
+ * Undoes last proposal of propse_state().
+ *
+ * @param cn
+ */
+static void undo_proposal(struct context *cn)
+{
+	if (cn->proposal_toggle != -1) switch_state(cn,cn->proposal_toggle);
+	if (cn->proposal_s1 != -1)
+	{
+		switch_state(cn,cn->proposal_s1);
+		switch_state(cn,cn->proposal_s2);
+	}
+	if (cn->old_alpha >= 0.0) cn->alpha = cn->old_alpha;
+	if (cn->old_beta >= 0.0) cn->beta = cn->old_beta;
+	if (cn->old_p >= 0.0) cn->p = cn->old_p;
+}
+
+/**
  * The work horse.
  *
  * @param sets pointer to the sets. Sets a made of observable entities.
@@ -339,7 +501,7 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 {
 	int i,j;
 	int64_t step;
-	int64_t number_of_steps = 100000;
+	int64_t number_of_steps = 10;
 	struct context cn;
 	double score;
 
@@ -366,11 +528,18 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 
 	score = get_score(&cn);
 
+#ifdef DEBUG
+	printf("score=%g\n",score);
+#endif
+
+	GetRNGstate();
+
 	for (step=0;step<number_of_steps;step++)
 	{
-
+		propose_state(&cn);
 	}
 
+	PutRNGstate();
 bailout:
 	printf("huhu");
 }
@@ -439,9 +608,9 @@ bailout:
 }
 
 
-static void print_ns(struct context *cn)
+static void print_context(struct context *cn)
 {
-	printf("n00=%d n01=%d n10=%d n11=%d\n",cn->n00,cn->n01,cn->n10,cn->n11);
+	printf("n00=%d n01=%d n10=%d n11=%d num_active=%d\n",cn->n00,cn->n01,cn->n10,cn->n11,cn->number_of_sets - cn->number_of_inactive_sets);
 }
 
 /**
@@ -460,10 +629,10 @@ SEXP mgsa_test(void)
 	int sizes_of_sets[] = {sizeof(t1)/sizeof(t1[0]),sizeof(t2)/sizeof(t2[0])};
 
 	init_context(&cn,sets,sizes_of_sets,sizeof(sets)/sizeof(sets[0]),3,o,sizeof(o)/sizeof(o[0]));
-	printf("no active term: ");print_ns(&cn);
-	add_set(&cn,0); printf("t1 is active: ");print_ns(&cn);
-	remove_set(&cn,0);add_set(&cn,1); printf("t2 is active: ");print_ns(&cn);
-	add_set(&cn,0); printf("t1,t2 is active: ");print_ns(&cn);
+	printf("no active term: ");print_context(&cn);
+	add_set(&cn,0); printf("t1 is active: ");print_context(&cn);
+	remove_set(&cn,0);add_set(&cn,1); printf("t2 is active: ");print_context(&cn);
+	add_set(&cn,0); printf("t1,t2 is active: ");print_context(&cn);
 
 	return NULL_USER_OBJECT;
 }
