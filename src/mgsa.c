@@ -226,7 +226,8 @@ static void add_set(struct context *cn, int to_add)
 		cn->hidden_count[member]++;
 	}
 
-	/* Remove the added set from the inactive list */
+	/* Move the added set from the 0 partition to the 1 partition (it essentially becomes
+	 * new first element of the 1 element, while the last 0 element gets its original position) */
 	cn->number_of_inactive_sets--;
 	if (cn->number_of_inactive_sets != 0)
 	{
@@ -290,6 +291,9 @@ static void remove_set(struct context *cn, int to_remove)
 		cn->hidden_count[member]--;
 	}
 
+	/* Converse of above. Here the removed set, which belonged to the 1 partition,
+	 * is moved at the end of the 0 partition while the element at that place is
+	 * pushed to the original position of the to be removed element. */
 	if (cn->number_of_inactive_sets != (cn->number_of_sets - 1))
 	{
 		int pos = cn->position_of_set_in_partition[to_remove];
