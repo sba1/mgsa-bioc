@@ -331,7 +331,7 @@ static void remove_set(struct context *cn, int to_remove)
  * @param cn defines the context on which to operate
  * @param to_switch defines the set which should be switched.
  */
-static void switch_state(struct context *cn, int to_switch)
+static void toggle_state(struct context *cn, int to_switch)
 {
 	int new_state;
 
@@ -432,7 +432,7 @@ static void propose_state(struct context *cn)
 		{
 			/* on/off */
 			cn->proposal_toggle = proposal;
-			switch_state(cn,proposal);
+			toggle_state(cn,proposal);
 		}	else
 		{
 			int active_term_pos;
@@ -446,8 +446,8 @@ static void propose_state(struct context *cn)
 			cn->proposal_s1 = cn->set_partition[active_term_pos];
 			cn->proposal_s2 = cn->set_partition[inactive_term_pos];
 
-			switch_state(cn,cn->proposal_s1);
-			switch_state(cn,cn->proposal_s2);
+			toggle_state(cn,cn->proposal_s1);
+			toggle_state(cn,cn->proposal_s2);
 		}
 	} else
 	{
@@ -475,11 +475,11 @@ static void propose_state(struct context *cn)
  */
 static void undo_proposal(struct context *cn)
 {
-	if (cn->proposal_toggle != -1) switch_state(cn,cn->proposal_toggle);
+	if (cn->proposal_toggle != -1) toggle_state(cn,cn->proposal_toggle);
 	if (cn->proposal_s1 != -1)
 	{
-		switch_state(cn,cn->proposal_s1);
-		switch_state(cn,cn->proposal_s2);
+		toggle_state(cn,cn->proposal_s1);
+		toggle_state(cn,cn->proposal_s2);
 	}
 	if (cn->old_alpha >= 0.0) cn->alpha = cn->old_alpha;
 	if (cn->old_beta >= 0.0) cn->beta = cn->old_beta;
