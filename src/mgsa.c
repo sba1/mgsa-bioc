@@ -44,11 +44,15 @@ struct context
 	/** @brief number of active sets */
 	int number_of_inactive_sets;
 
-	/** @brief contains indices of sets that are inactive TODO: This really is a partition */
-	int *set_inactive_list;
+	/**
+	 *  @brief contains indices of sets that are inactive and active in form of a partition.
+	 *
+	 *  The pivot element is given by number_of_inactive_sets.
+	 **/
+	int *set_partition;
 
 	/** @brief array that reflects the position of elements in set_inactive_list */
-	int *position_of_set_in_inactive_list;
+	int *position_of_set_in_partition;
 
 	/** @brief Number of observable */
 	int number_of_observable;
@@ -111,14 +115,14 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	if (!(cn->sets_active = (int*)R_alloc(number_of_sets,sizeof(cn->sets_active[0]))))
 		goto bailout;
 	memset(cn->sets_active,0,number_of_sets * sizeof(cn->sets_active[0]));
-	if (!(cn->set_inactive_list = (int*)R_alloc(number_of_sets,sizeof(cn->set_inactive_list[0]))))
+	if (!(cn->set_partition = (int*)R_alloc(number_of_sets,sizeof(cn->set_partition[0]))))
 		goto bailout;
-	if (!(cn->position_of_set_in_inactive_list = (int*)R_alloc(number_of_sets,sizeof(cn->position_of_set_in_inactive_list[0]))))
+	if (!(cn->position_of_set_in_partition = (int*)R_alloc(number_of_sets,sizeof(cn->position_of_set_in_partition[0]))))
 		goto bailout;
 	for (i=0;i<number_of_sets;i++)
 	{
-		cn->set_inactive_list[i] = i;
-		cn->position_of_set_in_inactive_list[i] = i;
+		cn->set_partition[i] = i;
+		cn->position_of_set_in_partition[i] = i;
 	}
 	cn->number_of_inactive_sets = number_of_sets;
 
@@ -226,33 +230,33 @@ static void add_set(struct context *cn, int to_add)
 	cn->number_of_inactive_sets--;
 	if (cn->number_of_inactive_sets != 0)
 	{
-		int pos = cn->position_of_set_in_inactive_list[to_add];
-		int e0 = cn->set_inactive_list[cn->number_of_inactive_sets];
+		int pos = cn->position_of_set_in_partition[to_add];
+		int e0 = cn->set_partition[cn->number_of_inactive_sets];
 		/* Move last element in the partition to left */
-		cn->set_inactive_list[pos] = e0;
-		cn->position_of_set_in_inactive_list[e0] = pos;
+		cn->set_partition[pos] = e0;
+		cn->position_of_set_in_partition[e0] = pos;
 		/* Let be the newly added term the first in the partition */
-		cn->set_inactive_list[cn->number_of_inactive_sets] = to_add;
-		cn->position_of_set_in_inactive_list[to_add] = cn->number_of_inactive_sets;
+		cn->set_partition[cn->number_of_inactive_sets] = to_add;
+		cn->position_of_set_in_partition[to_add] = cn->number_of_inactive_sets;
 	}
 
 #ifdef DEBUG
 	{
-		printf("Add of %d produced following inactive list:\n",to_add);
+		printf("Add of %d produced following sets to be inactive:\n",to_add);
 		if (cn->number_of_inactive_sets == 0)
 			printf(" empty list\n");
 		for (i=0;i<cn->number_of_inactive_sets;i++)
 		{
-			int elem = cn->set_inactive_list[i];
-			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+			int elem = cn->set_partition[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
 		}
-		printf("Add of %d produced following active list:\n",to_add);
+		printf("Add of %d produced following sets to be active:\n",to_add);
 		if (cn->number_of_sets - cn->number_of_inactive_sets == 0)
 			printf(" empty list\n");
 		for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		{
-			int elem = cn->set_inactive_list[i];
-			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+			int elem = cn->set_partition[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
 		}
 
 	}
@@ -288,37 +292,32 @@ static void remove_set(struct context *cn, int to_remove)
 
 	if (cn->number_of_inactive_sets != (cn->number_of_sets - 1))
 	{
-		int pos = cn->position_of_set_in_inactive_list[to_remove];
-		int e1 = cn->set_inactive_list[cn->number_of_inactive_sets];
-		cn->set_inactive_list[pos] = e1;
-		cn->position_of_set_in_inactive_list[e1] = pos;
-		cn->set_inactive_list[cn->number_of_inactive_sets] = to_remove;
-		cn->position_of_set_in_inactive_list[to_remove] = cn->number_of_inactive_sets;
+		int pos = cn->position_of_set_in_partition[to_remove];
+		int e1 = cn->set_partition[cn->number_of_inactive_sets];
+		cn->set_partition[pos] = e1;
+		cn->position_of_set_in_partition[e1] = pos;
+		cn->set_partition[cn->number_of_inactive_sets] = to_remove;
+		cn->position_of_set_in_partition[to_remove] = cn->number_of_inactive_sets;
 	}
 	cn->number_of_inactive_sets++;
 
-	/* Finally, add the removed set to the inactive list but remember the index */
-//	cn->set_inactive_list[cn->number_of_inactive_sets] = to_remove;
-//	cn->position_of_set_in_inactive_list[to_remove] = cn->number_of_inactive_sets;
-//	cn->number_of_inactive_sets++;
-
 #ifdef DEBUG
 	{
-		printf("Remove of %d produced following inactive list:\n",to_remove);
+		printf("Remove of %d produced following sets to be inactive:\n",to_remove);
 		if (cn->number_of_inactive_sets == 0)
 			printf(" empty list\n");
 		for (i=0;i<cn->number_of_inactive_sets;i++)
 		{
-			int elem = cn->set_inactive_list[i];
-			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+			int elem = cn->set_partition[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
 		}
-		printf("Remove of %d produced following active list:\n",to_remove);
+		printf("Remove of %d produced following sets to be active:\n",to_remove);
 		if (cn->number_of_sets - cn->number_of_inactive_sets == 0)
 			printf(" empty list\n");
 		for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		{
-			int elem = cn->set_inactive_list[i];
-			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_inactive_list[elem],i);
+			int elem = cn->set_partition[i];
+			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
 		}
 
 	}
@@ -444,8 +443,8 @@ static void propose_state(struct context *cn)
 			active_term_pos = (int)(proposal / (cn->number_of_sets - cn->number_of_inactive_sets)) +  cn->number_of_inactive_sets;
 			inactive_term_pos = (int)(proposal % cn->number_of_inactive_sets);
 
-			cn->proposal_s1 = cn->set_inactive_list[active_term_pos];
-			cn->proposal_s2 = cn->set_inactive_list[inactive_term_pos];
+			cn->proposal_s1 = cn->set_partition[active_term_pos];
+			cn->proposal_s2 = cn->set_partition[inactive_term_pos];
 
 			switch_state(cn,cn->proposal_s1);
 			switch_state(cn,cn->proposal_s2);
