@@ -9,7 +9,7 @@
  *
  *  If you want to test using R something like
  *
- *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(2,1,3),c(1,2,3)),10,o=c(3,1),4,5,6)" | R --vanilla)"
+ *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(1,2),c(3)),10,o=c(1,2),4,5,6)" | R --vanilla)"
  *  or (for the test function)
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
@@ -63,16 +63,6 @@ struct context
 	/** @brief Array, indicating how much sets lead to the activation of a hidden entry */
 	int *hidden_count;
 
-	/** @brief The number hidden elements that are active */
-	int number_of_hidden_active;
-
-	/**
-	 * @brief Array that contains the hidden that are active.
-	 *
-	 * Only the first number_of_hidden_active elements are interesting.
-	 **/
-	int *hidden_active;
-
 	int n00;
 	int n01;
 	int n10;
@@ -88,6 +78,10 @@ struct context
 	double old_alpha;
 	double old_beta;
 	double old_p;
+
+	/* Summary related */
+	uint64_t *sets_activity_count;
+
 };
 
 /**
@@ -126,11 +120,6 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	}
 	cn->number_of_inactive_sets = number_of_sets;
 
-	if (!(cn->hidden_active = (int*)R_alloc(n,sizeof(cn->hidden_active[0]))))
-		goto bailout;
-	memset(cn->hidden_active,0,n * sizeof(cn->hidden_active[0]));
-	cn->number_of_hidden_active = 0;
-
 	if (!(cn->hidden_count = (int*)R_alloc(n,sizeof(cn->hidden_count[0]))))
 		goto bailout;
 	memset(cn->hidden_count,0,n * sizeof(cn->hidden_count[0]));
@@ -140,6 +129,10 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	memset(cn->observable,0,n * sizeof(cn->observable[0]));
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
+
+	if (!(cn->sets_activity_count = (int*)R_alloc(n,sizeof(cn->sets_activity_count[0]))))
+		goto bailout;
+	memset(cn->sets_activity_count,0,n * sizeof(cn->sets_activity_count[0]));
 
 	/* Initially, no set is active, hence all observations that are true are false positive... */
 	cn->n10 = lo;
@@ -219,8 +212,6 @@ static void add_set(struct context *cn, int to_add)
 		if (!cn->hidden_count[member])
 		{
 			/* A not yet active member is about to be activated */
-//			cn->hidden_active[cn->number_of_hidden_active] = member;
-			cn->number_of_hidden_active++;
 			hidden_member_activated(cn,member);
 		}
 		cn->hidden_count[member]++;
@@ -284,8 +275,6 @@ static void remove_set(struct context *cn, int to_remove)
 		if (cn->hidden_count[member] == 1)
 		{
 			/* A active member is about to be deactivated  */
-//			cn->hidden_active[cn->number_of_hidden_active] = member;
-			cn->number_of_hidden_active--;
 			hidden_member_deactivated(cn,member);
 		}
 		cn->hidden_count[member]--;
@@ -293,7 +282,7 @@ static void remove_set(struct context *cn, int to_remove)
 
 	/* Converse of above. Here the removed set, which belonged to the 1 partition,
 	 * is moved at the end of the 0 partition while the element at that place is
-	 * pushed to the original position of the to be removed element. */
+	 * pushed to the original position of the removed element. */
 	if (cn->number_of_inactive_sets != (cn->number_of_sets - 1))
 	{
 		int pos = cn->position_of_set_in_partition[to_remove];
@@ -339,7 +328,7 @@ static void toggle_state(struct context *cn, int to_switch)
 {
 	int new_state;
 
-	new_state = cn->sets_active[to_switch];
+	new_state = !cn->sets_active[to_switch];
 
 	if (new_state)
 		add_set(cn,to_switch);
@@ -491,6 +480,20 @@ static void undo_proposal(struct context *cn)
 }
 
 /**
+ * Records the current activity of the sets.
+ *
+ * @param cn
+ */
+static void record_activity(struct context *cn)
+{
+	int i;
+
+	/* Remember that sets that are active are stored in the  partition */
+	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
+		cn->sets_activity_count[cn->set_partition[i]]++;
+}
+
+/**
  * The work horse.
  *
  * @param sets pointer to the sets. Sets a made of observable entities.
@@ -504,7 +507,8 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 {
 	int i,j;
 	int64_t step;
-	int64_t number_of_steps = 10;
+	int64_t number_of_steps = 1000;
+	uint64_t neighborhood_size;
 	struct context cn;
 	double score;
 
@@ -526,21 +530,57 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 	}
 #endif
 
+	GetRNGstate();
+
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
 		goto bailout;
 
 	score = get_score(&cn);
+	neighborhood_size = get_neighborhood_size(&cn);
 
 #ifdef DEBUG
 	printf("score=%g\n",score);
 #endif
 
-	GetRNGstate();
-
 	for (step=0;step<number_of_steps;step++)
 	{
+		double new_score;
+		double accept_probability;
+		double u;
+		uint64_t new_neighborhood_size;
+
 		propose_state(&cn);
+		new_score = get_score(&cn);
+		new_neighborhood_size = get_neighborhood_size(&cn);
+
+		accept_probability = exp(new_score - score) * (double)neighborhood_size / (double)new_neighborhood_size; /* last quotient is the hasting ratio */
+#ifdef DEBUG
+		printf("score = %g new_score=%g\n",score,new_score);
+#endif
+
+		u = unif_rand();
+		if (u >= accept_probability)
+		{
+			undo_proposal(&cn);
+		} else
+		{
+			score = new_score;
+			neighborhood_size = new_neighborhood_size;
+		}
+
+		record_activity(&cn);
 	}
+
+#ifdef DEBUG
+	{
+		int i;
+
+		for (i=0;i<cn.number_of_sets;i++)
+		{
+			printf(" Set %d: %g\n",i, (double)cn.sets_activity_count[i] / (double)number_of_steps);
+		}
+	}
+#endif
 
 	PutRNGstate();
 bailout:
