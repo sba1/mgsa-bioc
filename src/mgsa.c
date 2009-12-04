@@ -64,6 +64,10 @@ struct context
 	/** @brief Array, indicating how much sets lead to the activation of a hidden entry */
 	int *hidden_count;
 
+	double alpha_fixed;
+	double beta_fixed;
+	double p_fixed;
+
 	int n00;
 	int n01;
 	int n10;
@@ -139,6 +143,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	cn->n10 = lo;
 	/* while the rest are true negative */
 	cn->n00 = n - lo;
+	cn->n01 = cn->n11 = 0;
 
 	cn->alpha = 0.10;
 	cn->beta = 0.25;
@@ -345,6 +350,8 @@ static void toggle_state(struct context *cn, int to_switch)
  */
 static double get_alpha(struct context *cn)
 {
+	if (cn->alpha_fixed > 0.0 && cn->alpha_fixed < 1)
+		return cn->alpha_fixed;
 	return cn->alpha;
 }
 
@@ -356,6 +363,8 @@ static double get_alpha(struct context *cn)
  */
 static double get_beta(struct context *cn)
 {
+	if (cn->beta_fixed > 0.0 && cn->beta_fixed < 1)
+		return cn->beta_fixed;
 	return cn->beta;
 }
 
@@ -367,6 +376,8 @@ static double get_beta(struct context *cn)
  */
 static double get_p(struct context *cn)
 {
+	if (cn->p_fixed > 0.0 && cn->p_fixed < 1)
+		return cn->p_fixed;
 	return cn->p;
 }
 
@@ -434,7 +445,7 @@ static void propose_state(struct context *cn)
 
 			proposal -= cn->number_of_sets;
 
-			active_term_pos = (int)(proposal / (cn->number_of_sets - cn->number_of_inactive_sets)) +  cn->number_of_inactive_sets;
+			active_term_pos = (int)(proposal / cn->number_of_inactive_sets) +  cn->number_of_inactive_sets;
 			inactive_term_pos = (int)(proposal % cn->number_of_inactive_sets);
 
 			cn->proposal_s1 = cn->set_partition[active_term_pos];
@@ -510,7 +521,7 @@ struct result
  * @param lo length of o
  * @param number_of_steps defines the number of mcmc steps to be performed
  */
-static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps)
+static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, double alpha, double beta, double p)
 {
 	int i,j;
 	int64_t step;
@@ -535,6 +546,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	{
 		printf(" o[%d]=%d\n",i,o[i]);
 	}
+
+	printf(" alpha=%g beta=%g p=%g\n",alpha,beta,p);
 #endif
 	memset(&res,0,sizeof(res));
 
@@ -542,6 +555,10 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
 		goto bailout;
+
+	cn.alpha_fixed = alpha;
+	cn.beta_fixed = beta;
+	cn.p_fixed = p;
 
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
@@ -563,7 +580,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 
 		accept_probability = exp(new_score - score) * (double)neighborhood_size / (double)new_neighborhood_size; /* last quotient is the hasting ratio */
 #ifdef DEBUG
-		printf("score = %g new_score=%g\n",score,new_score);
+		printf("score = %g new_score=%g alpha=%g beta=%g p=%g\n",score,new_score,get_alpha(&cn),get_beta(&cn),get_p(&cn));
 #endif
 
 		u = unif_rand();
@@ -626,6 +643,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
 	PROTECT(steps = AS_INTEGER(steps));
+	PROTECT(alpha = AS_NUMERIC(alpha));
+	PROTECT(beta = AS_NUMERIC(beta));
+	PROTECT(p = AS_NUMERIC(p));
 
 	/* Observations */
 	xo = INTEGER_POINTER(o);
@@ -635,7 +655,15 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 	/* Turn 1 based observation indices into 0 based ones */
 	for (i=0;i<lo;i++)
-		no[i] = xo[i] - 1;
+	{
+		no[i] = xo[i] - 1; /* 1 based to 0 based */
+
+		if (no[i] >= INTEGER_VALUE(n))
+		{
+			error("Observation index to high!");
+			goto bailout;
+		}
+	}
 
 	/* Set associations. Turn 1 based observations indices into 0 based ones */
 	lsets = LENGTH(sets);
@@ -660,31 +688,38 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 		xset = INTEGER_POINTER(set);
 		for (j=0;j<lset[i];j++)
-			nsets[i][j] = xset[j];
+		{
+			nsets[i][j] = xset[j] - 1; /* 1 based to 0 based */
+			if (nsets[i][j] >= INTEGER_VALUE(n))
+			{
+				error("Set index to high (must not exceed 'n')");
+				goto bailout;
+			}
+		}
 		UNPROTECT(1);
 	}
 
 	/* Create the result. TODO Use a list */
 	{
 		struct result r;
-		SEXP marg;
 
-		PROTECT(marg = allocVector(REALSXP,lsets));
+		r = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0]);
 
-		r = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps));
-
-
-		for (i=0;i<lsets;i++)
+		if (r.marg_set_activity)
 		{
-			REAL(marg)[i] = r.marg_set_activity[i];
-		}
+			SEXP marg;
+			PROTECT(marg = allocVector(REALSXP,lsets));
 
-		res = marg;
-		UNPROTECT(1);
+			for (i=0;i<lsets;i++)
+				REAL(marg)[i] = r.marg_set_activity[i];
+
+			res = marg;
+			UNPROTECT(1);
+		}
 	}
 
 bailout:
-	UNPROTECT(4);
+	UNPROTECT(7);
 	return res;
 }
 
