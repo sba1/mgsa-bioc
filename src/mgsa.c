@@ -8,8 +8,9 @@
  *  "gcc mgsa.c -DSTANDALONE `R CMD config --cppflags` `R CMD config --ldflags` -o mgsa"
  *
  *  If you want to test using R something like
- *
- *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(1,2),c(3)),10,o=c(1,2),4,5,6)" | R --vanilla)"
+ *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);mgsa(list(c(1,2),c(3)),3,o=c(1,2),steps=100)" | R --vanilla)"
+ *  or (for invoking the function directly)
+ *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(1,2),c(3)),3,o=c(1,2),4,5,6,steps=100)" | R --vanilla)"
  *  or (for the test function)
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
@@ -130,7 +131,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
 
-	if (!(cn->sets_activity_count = (int*)R_alloc(n,sizeof(cn->sets_activity_count[0]))))
+	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(n,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
 	memset(cn->sets_activity_count,0,n * sizeof(cn->sets_activity_count[0]));
 
@@ -493,6 +494,11 @@ static void record_activity(struct context *cn)
 		cn->sets_activity_count[cn->set_partition[i]]++;
 }
 
+struct result
+{
+	double *marg_set_activity;
+};
+
 /**
  * The work horse.
  *
@@ -502,14 +508,15 @@ static void record_activity(struct context *cn)
  * @param n the number of observable entities.
  * @param o indices of entities which are "on" (0 based).
  * @param lo length of o
+ * @param number_of_steps defines the number of mcmc steps to be performed
  */
-static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo)
+static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps)
 {
 	int i,j;
 	int64_t step;
-	int64_t number_of_steps = 1000;
 	uint64_t neighborhood_size;
 	struct context cn;
+	struct result res;
 	double score;
 
 #ifdef DEBUG
@@ -529,6 +536,7 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 		printf(" o[%d]=%d\n",i,o[i]);
 	}
 #endif
+	memset(&res,0,sizeof(res));
 
 	GetRNGstate();
 
@@ -583,8 +591,15 @@ static void do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int
 #endif
 
 	PutRNGstate();
+
+	if (!(res.marg_set_activity = (double*)R_alloc(number_of_sets,sizeof(res.marg_set_activity[0]))))
+		goto bailout;
+
+	for (i=0;i<cn.number_of_sets;i++)
+		res.marg_set_activity[i] = (double)cn.sets_activity_count[i] / (double)number_of_steps;
+
 bailout:
-	printf("huhu");
+	return res;
 }
 
 /**
@@ -593,18 +608,24 @@ bailout:
  *
  * @note TODO: Check whether sets are real sets.
  */
-SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p)
+SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP steps)
 {
 	int *xo,*no,lo;
 	int **nsets, *lset, lsets;
 	int i,j;
 
+	SEXP res = NULL_USER_OBJECT;
+
 	if (LENGTH(n) != 1)
 		error("Parameter 'n' needs to be atomic!");
+
+	if (LENGTH(steps) != 1)
+		error("Parameter 'steps' needs to be atomic!");
 
 	PROTECT(n = AS_INTEGER(n));
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
+	PROTECT(steps = AS_INTEGER(steps));
 
 	/* Observations */
 	xo = INTEGER_POINTER(o);
@@ -643,11 +664,28 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p)
 		UNPROTECT(1);
 	}
 
-	do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo);
+	/* Create the result. TODO Use a list */
+	{
+		struct result r;
+		SEXP marg;
+
+		PROTECT(marg = allocVector(REALSXP,lsets));
+
+		r = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps));
+
+
+		for (i=0;i<lsets;i++)
+		{
+			REAL(marg)[i] = r.marg_set_activity[i];
+		}
+
+		res = marg;
+		UNPROTECT(1);
+	}
 
 bailout:
-	UNPROTECT(3);
-	return NULL_USER_OBJECT;
+	UNPROTECT(4);
+	return res;
 }
 
 
@@ -682,7 +720,7 @@ SEXP mgsa_test(void)
 
 
 R_CallMethodDef callMethods[] = {
-   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 6},
+   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 7},
    {"mgsa_test", (DL_FUNC)&mgsa_test, 0},
    {NULL, NULL, 0}
 };
