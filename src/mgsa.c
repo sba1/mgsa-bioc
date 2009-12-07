@@ -28,6 +28,97 @@
 /* Define if file should be compiled as standalone (mainly for testing purposes) */
 /* #define STANDALONE */
 
+struct summary_for_cont_var
+{
+	double min;
+	double max;
+	int num_of_discrete_values;
+	int values[0];
+};
+
+/**
+ * Creates the structure needed to summarize a continuous variable.
+ *
+ * @param min
+ * @param max
+ * @param number_of_discrete_values
+ * @return
+ */
+struct summary_for_cont_var *new_summary_for_cont_var(double min, double max, int number_of_discrete_values)
+{
+	struct summary_for_cont_var *sum;
+
+	sum = (struct summary_for_cont_var *)R_alloc(1,sizeof(*sum) + number_of_discrete_values * sizeof(int));
+	if (sum)
+	{
+		sum->min = min;
+		sum->max = max;
+		sum->num_of_discrete_values = number_of_discrete_values;
+		memset(sum->values,0,number_of_discrete_values * sizeof(int));
+	}
+
+	return sum;
+}
+
+/**
+ * Adds a new value to a summary.
+ *
+ * @param sum
+ * @param val
+ */
+void add_to_summary(struct summary_for_cont_var *sum, double val)
+{
+	int slot;
+
+	val -= sum->min;
+	slot = val * sum->num_of_discrete_values / sum->max;
+	if (slot < 0) slot=0;
+	if (slot >= sum->num_of_discrete_values) slot = sum->num_of_discrete_values - 1;
+
+	sum->values[slot]++;
+}
+
+/**
+ * Returns a R representation of a summary.
+ *
+ * @param sum
+ *
+ * @note you must UNPROTECT one variable, after calling this function.
+ */
+static SEXP create_R_representation_of_summary(struct summary_for_cont_var *sum)
+{
+	int i;
+	double w;
+
+	SEXP l;
+	SEXP l_names;
+	SEXP breaks;
+	SEXP counts;
+
+	w = (sum->max - sum->min)/sum->num_of_discrete_values;
+
+	PROTECT(l = allocVector(VECSXP,2));
+	PROTECT(l_names = allocVector(STRSXP,2));
+	PROTECT(counts = allocVector(REALSXP,sum->num_of_discrete_values));
+	PROTECT(breaks = allocVector(REALSXP,sum->num_of_discrete_values));
+
+	for (i=0;i<sum->num_of_discrete_values;i++)
+		REAL(breaks)[i] = sum->min + w*i;
+	for (i=0;i<sum->num_of_discrete_values;i++)
+		REAL(counts)[i] = sum->values[i];
+
+	SET_STRING_ELT(l_names,0,mkChar("breaks"));
+	SET_STRING_ELT(l_names,1,mkChar("counts"));
+	SET_VECTOR_ELT(l,0,breaks);
+	SET_VECTOR_ELT(l,1,counts);
+	setAttrib(l,R_NamesSymbol,l_names);
+
+
+	UNPROTECT(3);
+
+	return l;
+}
+
 struct context
 {
 	/** @brief Number of sets */
@@ -86,7 +177,9 @@ struct context
 
 	/* Summary related */
 	uint64_t *sets_activity_count;
-
+	struct summary_for_cont_var *alpha_summary;
+	struct summary_for_cont_var *beta_summary;
+	struct summary_for_cont_var *p_summary;
 };
 
 /**
@@ -135,9 +228,17 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
 
+	/* Summary related */
 	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(n,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
 	memset(cn->sets_activity_count,0,n * sizeof(cn->sets_activity_count[0]));
+	if (!(cn->alpha_summary = new_summary_for_cont_var(0,1,10)))
+		goto bailout;
+	if (!(cn->beta_summary = new_summary_for_cont_var(0,1,10)))
+		goto bailout;
+	if (!(cn->p_summary = new_summary_for_cont_var(0,1,10)))
+		goto bailout;
+
 
 	/* Initially, no set is active, hence all observations that are true are false positive... */
 	cn->n10 = lo;
@@ -503,11 +604,18 @@ static void record_activity(struct context *cn)
 	/* Remember that sets that are active are stored in the  partition */
 	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		cn->sets_activity_count[cn->set_partition[i]]++;
+
+	add_to_summary(cn->alpha_summary,get_alpha(cn));
+	add_to_summary(cn->beta_summary,get_beta(cn));
+	add_to_summary(cn->p_summary,get_p(cn));
 }
 
 struct result
 {
 	double *marg_set_activity;
+	struct summary_for_cont_var *alpha_summary;
+	struct summary_for_cont_var *beta_summary;
+	struct summary_for_cont_var *p_summary;
 };
 
 /**
@@ -615,6 +723,10 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	for (i=0;i<cn.number_of_sets;i++)
 		res.marg_set_activity[i] = (double)cn.sets_activity_count[i] / (double)number_of_steps;
 
+	res.alpha_summary = cn.alpha_summary;
+	res.beta_summary = cn.beta_summary;
+	res.p_summary = cn.p_summary;
+
 bailout:
 	return res;
 }
@@ -702,6 +814,10 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	/* Create the result. TODO Use a list */
 	{
 		struct result r;
+		SEXP names;
+
+		PROTECT(res = allocVector(VECSXP,4));
+		PROTECT(names = allocVector(STRSXP,4));
 
 		r = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0]);
 
@@ -713,9 +829,42 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			for (i=0;i<lsets;i++)
 				REAL(marg)[i] = r.marg_set_activity[i];
 
-			res = marg;
+			SET_VECTOR_ELT(res,0,marg);
+			SET_STRING_ELT(names,0,mkChar("marg"));
+
 			UNPROTECT(1);
 		}
+
+		{
+			SEXP alpha = create_R_representation_of_summary(r.alpha_summary);
+
+			SET_VECTOR_ELT(res,1,alpha);
+			SET_STRING_ELT(names,1,mkChar("alpha"));
+
+			UNPROTECT(1);
+		}
+
+		{
+			SEXP beta = create_R_representation_of_summary(r.beta_summary);
+
+			SET_VECTOR_ELT(res,2,beta);
+			SET_STRING_ELT(names,2,mkChar("beta"));
+
+			UNPROTECT(1);
+		}
+
+		{
+			SEXP p = create_R_representation_of_summary(r.p_summary);
+
+			SET_VECTOR_ELT(res,3,p);
+			SET_STRING_ELT(names,3,mkChar("p"));
+
+			UNPROTECT(1);
+		}
+
+
+		setAttrib(res,R_NamesSymbol,names);
+		UNPROTECT(2);
 	}
 
 bailout:
