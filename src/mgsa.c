@@ -23,7 +23,7 @@
 #include <R_ext/Rdynload.h>
 
 /* Enable debugging */
-#define DEBUG
+//#define DEBUG
 
 /* Define if file should be compiled as standalone (mainly for testing purposes) */
 /* #define STANDALONE */
@@ -631,7 +631,7 @@ struct result
  */
 static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, double alpha, double beta, double p)
 {
-	int i,j;
+	int i;
 	int64_t step;
 	uint64_t neighborhood_size;
 	struct context cn;
@@ -642,6 +642,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 
 	for (i=0;i<number_of_sets;i++)
 	{
+		int j;
+
 		printf(" %d: ", sizes_of_sets[i]);
 		for (j=0;j<sizes_of_sets[i];j++)
 			printf("%d ", sets[i][j]);
