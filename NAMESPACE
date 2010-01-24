@@ -1,6 +1,5 @@
 useDynLib(mgsa)
 
 exportMethods(
-              "mgsaFast",
               "mgsa" 
               )

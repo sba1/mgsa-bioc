@@ -6,7 +6,7 @@
 require(mgsa)
 
 n  <-  1000
-number.of.sets <- 1000
+number.of.sets <- 100
 number.of.steps <- 1e6
 
 sets <- lapply(
@@ -49,18 +49,8 @@ t <- system.time(r <- mgsa(o2, sets2, steps=number.of.steps))
 print(t)
 #print(r)
 
-cat("mgsaFast:\n")
-#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=number.of.steps))
-t <- system.time(r <- mgsa(which(o==1), sets, steps=number.of.steps))
-print(t)
-
 cat("mgsa: logical, list:\n")
 #t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
 t <- system.time(r <- mgsa(o==1, sets, steps=number.of.steps))
 print(t)
 
-
-cat("mgsa: 50 times character, list:\n")
-#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
-t <- system.time( lapply(1:50, function(x) mgsa(o2, sets2, steps=number.of.steps) ) )
-print(t)
