@@ -1,0 +1,66 @@
+#
+# Performs a basic test
+#
+###############################################################################
+
+require(mgsa)
+
+n  <-  1000
+number.of.sets <- 1000
+number.of.steps <- 1e6
+
+sets <- lapply(
+		sample(100,size=number.of.sets,replace=T),
+		function(x){
+			return(sample(n,size=x,replace=F))
+		}
+)
+
+active.sets <- sample(number.of.sets,size=2)
+
+print(active.sets)
+
+alpha <- 0.05
+beta <- 0.05
+hidden <- rep(0,n)
+hidden[unlist(sets[active.sets])] <- 1
+o <- hidden
+false.positives <- runif(sum(!hidden)) < alpha
+false.negatives <- runif(sum(hidden)) < beta
+o[hidden][false.negatives]  <-  F
+o[!hidden][false.positives]  <-  T
+
+## integer, list
+cat("mgsa: integer, list:\n")
+#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
+t <- system.time(r <- mgsa(which(o==1), sets, steps=number.of.steps))
+print(t)
+#print(r)
+
+## with gene names
+genes = sapply( 1:n, function(i) do.call( paste, c( as.list( sample( LETTERS, 6, replace=TRUE) ), sep="" ) ) )
+
+sets2 = lapply(sets, function(x) genes[x] )
+o2 = genes[o]
+
+cat("mgsa: character, list:\n")
+#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=number.of.steps))
+t <- system.time(r <- mgsa(o2, sets2, steps=number.of.steps))
+print(t)
+#print(r)
+
+cat("mgsaFast:\n")
+#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=number.of.steps))
+t <- system.time(r <- mgsa(which(o==1), sets, steps=number.of.steps))
+print(t)
+
+cat("mgsa: logical, list:\n")
+#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
+t <- system.time(r <- mgsa(o==1, sets, steps=number.of.steps))
+print(t)
+
+
+cat("mgsa: 50 times character, list:\n")
+#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
+t <- system.time( lapply(1:50, function(x) mgsa(o2, sets2, steps=number.of.steps) ) )
+print(t)
