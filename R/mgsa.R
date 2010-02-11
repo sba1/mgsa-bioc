@@ -10,7 +10,7 @@ mgsa.core <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6 ){
 ## main function that treats case of character and integer
 mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6){
 	
-	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class than 'o'.")
+	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
 	## population
 	if(is.null(population)){
@@ -18,7 +18,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 		
 	}else{
 		if(class(population)!= class(o)){
-			stop("'population' must be NULL or have the same class than 'o'.")
+			stop("'population' must be NULL or have the same class as 'o'.")
 		}
 		population <- sort(unique(population))
 	}
