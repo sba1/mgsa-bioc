@@ -86,4 +86,14 @@ setMethod(
 		}
 )
 
-
+# o character and mapping object
+# TODO: make it also work with integers
+setMethod(
+		"mgsa",
+		signature = c(o="character", sets="MgsaMapping"),
+		function( o, sets, population, alpha, beta, p, steps) {
+			if (!is.null(population)) population<-sets@item.idx.map[population]
+			return(mgsa ( sets@item.idx.map[o], sets@sets, population, alpha, beta, p, steps))
+		}
+)
+mgsa(observations,mapping)

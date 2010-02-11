@@ -1,11 +1,9 @@
-#
-# This functions takes a mapping of go.ids and items and returns
-# a list containing a list ofset -> item mappings suitable for mgsa
-# and a mapping function which can be used to get the index of a item
-# name
-#
-# TODO: provide support for evidence codes and documentation
-#
+#'
+#' This functions takes a mapping of go.ids and items and returns
+#' a list containing a list ofset -> item mappings suitable for mgsa
+#' and a mapping function which can be used to get the index of a item
+#' name
+#'
 mgsa.make.go.mapping<-function(go.ids,items)
 {
 	if (length(go.ids) != length(items))
@@ -50,19 +48,23 @@ mgsa.make.go.mapping<-function(go.ids,items)
 	all.items.names<-as.vector(levels(all.items))
 	levels(all.items)<-1:length(unique(all.items))
 
-	sets<-split(all.items,all$id)
+	sets<-split(as.integer(all.items),all$id)
 	map.vec<-1:length(all.items.names)
 	names(map.vec)<-all.items.names
-	
-	# Create mapping-items-to-number function closure
-	map<-function(item.name) { return (map.vec[item.name])}
 
-	return(list(sets=sets,number.of.items=length(all.items), get.index=map))
+	mapping<-new("MgsaGoMapping");
+	mapping@sets<-sets
+	mapping@item.idx.map<-map.vec
+	
+	return(mapping)
 }
-#
-# Makes a mapping using a given goa file (as can be downloaded from Gene Ontology).
-# The file may be gzip-compressed.
-#
+
+#'
+#' Makes a mapping using a given goa file (as can be downloaded from Gene Ontology).
+#' The file may be gzip-compressed.
+#'
+#' TODO:  provide support for evidence codes
+#'
 mgsa.make.go.mapping.from.goa<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7)
 {
     goa = read.delim(gzfile(filename), na.strings = "", header=F, comment.char = "!", sep="\t")
