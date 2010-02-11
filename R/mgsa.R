@@ -23,10 +23,34 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 		population <- sort(unique(population))
 	}
 	
+	## encoding (index mapping) of the elements
 	encode <- function(x){ match( intersect(x, population), population) }
 	sets <- lapply(sets, encode)
 	o <- encode(o)
-	res <- mgsa.core(o, sets, n=length(population), alpha=alpha, beta=beta, p=p, steps=steps)
+	
+	## call to core function
+	raw <- mgsa.core(o, sets, n=length(population), alpha=alpha, beta=beta, p=p, steps=steps)
+	
+	## wrap raw results into a MgsaResults object
+	res <- new("MgsaResults")
+	
+	numberOfSteps(res) <- steps
+	populationSize(res) <- length(population)
+	studySetSizeInPopulation(res) <- length(unique(unlist(o)))
+	
+	alphaPost(res) <- data.frame( value = raw$alpha$breaks, posterior = raw$alpha$counts/steps )
+	betaPost(res) <- data.frame( value = raw$beta$breaks, posterior = raw$beta$counts/steps )
+	pPost(res) <- data.frame( value = raw$p$breaks, posterior = raw$p$counts/steps )
+	
+	setsResults(res) <- data.frame(
+							posterior = raw$marg,
+							inPopulation = sapply(sets, length),
+							inStudySet = sapply(sets, function(x) length(intersect(o,x)))
+					)
+	rownames( setsResults(res) ) <- names(sets)
+	
+	return(res)
+	
 }
 
 

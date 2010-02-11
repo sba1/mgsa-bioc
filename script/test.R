@@ -22,20 +22,31 @@ print(active.sets)
 
 alpha <- 0.05
 beta <- 0.05
-hidden <- rep(0,n)
-hidden[unlist(sets[active.sets])] <- 1
+hidden <- rep(FALSE,n)
+hidden[unlist(sets[active.sets])] <- TRUE
 o <- hidden
 false.positives <- runif(sum(!hidden)) < alpha
 false.negatives <- runif(sum(hidden)) < beta
-o[hidden][false.negatives]  <-  F
-o[!hidden][false.positives]  <-  T
+o[hidden][false.negatives]  <-  FALSE
+o[!hidden][false.positives]  <-  TRUE
 
 ## integer, list
 cat("mgsa: integer, list:\n")
 #t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
 t <- system.time(r <- mgsa(which(o==1), sets, steps=number.of.steps))
 print(t)
-#print(r)
+print(r)
+plot(r)
+
+## from now on with set names
+names(sets) <- paste("set",1:length(sets), sep="_")
+cat("mgsa: integer, list:\n")
+#t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
+t <- system.time(r <- mgsa(which(o==1), sets, steps=number.of.steps))
+print(t)
+print(r)
+plot(r)
+
 
 ## with gene names
 genes = sapply( 1:n, function(i) do.call( paste, c( as.list( sample( LETTERS, 6, replace=TRUE) ), sep="" ) ) )
@@ -47,10 +58,12 @@ cat("mgsa: character, list:\n")
 #t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=number.of.steps))
 t <- system.time(r <- mgsa(o2, sets2, steps=number.of.steps))
 print(t)
-#print(r)
+print(r)
+plot(r)
 
 cat("mgsa: logical, list:\n")
 #t <- system.time(r <- mgsa(which(o==1), sets, 1:n, steps=1e6))
 t <- system.time(r <- mgsa(o==1, sets, steps=number.of.steps))
 print(t)
-
+print(r)
+plot(r)

@@ -1,5 +1,20 @@
 useDynLib(mgsa)
+import( graphics ) 
+
+exportClasses(
+              "MgsaResults"
+              )
 
 exportMethods(
-              "mgsa" 
+              "mgsa",
+              "numberOfSteps", "numberOfSteps<-",
+              "populationSize", "populationSize<-",
+              "studySetSizeInPopulation", "studySetSizeInPopulation<-",
+              "alphaPost", "alphaPost<-",
+              "betaPost", "betaPost<-",
+              "pPost", "pPost<-",
+              "setsResults", "setsResults<-",
+              "show",
+              "plot"  
               )
+
