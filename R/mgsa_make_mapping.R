@@ -63,7 +63,7 @@ mgsa.make.go.mapping<-function(go.ids,items)
 #' Makes a mapping using a given goa file (as can be downloaded from Gene Ontology).
 #' The file may be gzip-compressed.
 #'
-#' TODO:  provide support for evidence codes
+#' TODO:  provide support for evidence codes, choose a better name
 #'
 mgsa.make.go.mapping.from.goa<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7)
 {

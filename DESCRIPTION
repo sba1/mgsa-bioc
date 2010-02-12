@@ -4,7 +4,7 @@ Date: 2010-02-11
 Title: Model-based gene set analysis
 Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur <julien.gagneur@embl.de>
 Maintainer: Sebastian Bauer <Sebastian.Bauer@charite.de>
-Depends: R (>= 2.9.0)
+Depends: R (>= 2.9.0), methods
 Description: Model-based gene set analysis
 License: GPL (>= 2)
 Collate: 	MgsaResults-class.R

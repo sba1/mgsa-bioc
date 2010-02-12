@@ -5,7 +5,7 @@
 library(mgsa)
 
 # TODO: Find out why functions are no longer defined
-source("../workspace/mgsa/R/mgsa_make_mapping.R")
+#source("../workspace/mgsa/R/mgsa_make_mapping.R")
 
 # Performs tests of random data
 #
