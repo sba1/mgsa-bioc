@@ -96,4 +96,3 @@ setMethod(
 			return(mgsa ( sets@item.idx.map[o], sets@sets, population, alpha, beta, p, steps))
 		}
 )
-mgsa(observations,mapping)
