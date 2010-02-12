@@ -8,7 +8,7 @@
  *  "gcc mgsa.c -DSTANDALONE `R CMD config --cppflags` `R CMD config --ldflags` -o mgsa"
  *
  *  If you want to test using R something like
- *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);mgsa(list(c(1,2),c(3)),3,o=c(1,2),steps=100)" | R --vanilla)"
+ *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);mgsa:::mgsa.trampoline(c(1,2),list(c(1,2),c(3)),3,steps=100,restarts=4)" | R --vanilla)"
  *  or (for invoking the function directly)
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(1,2),c(3)),3,o=c(1,2),4,5,6,steps=100)" | R --vanilla)"
  *  or (for the test function)
@@ -78,41 +78,51 @@ void add_to_summary(struct summary_for_cont_var *sum, double val)
 	sum->values[slot]++;
 }
 
+
 /**
  * Returns a R representation of a summary.
  *
  * @param sum
+ * @param number_of_summaries
  *
  * @note you must UNPROTECT one variable, after calling this function.
  */
-static SEXP create_R_representation_of_summary(struct summary_for_cont_var *sum)
+static SEXP create_R_representation_of_summary(struct summary_for_cont_var **sum, int number_of_summaries)
 {
-	int i;
-	double w;
+	int num_of_discrete_values;
+	int i,j;
+	double w,min,max;
 
 	SEXP l;
 	SEXP l_names;
 	SEXP breaks;
 	SEXP counts;
 
-	w = (sum->max - sum->min)/sum->num_of_discrete_values;
+
+	/* At the moment, we take only the first summary */
+	num_of_discrete_values = sum[0]->num_of_discrete_values;
+	min = sum[0]->min;
+	max = sum[0]->max;
+
+	w = (max - min) / num_of_discrete_values;
 
 	PROTECT(l = allocVector(VECSXP,2));
 	PROTECT(l_names = allocVector(STRSXP,2));
-	PROTECT(counts = allocVector(REALSXP,sum->num_of_discrete_values));
-	PROTECT(breaks = allocVector(REALSXP,sum->num_of_discrete_values));
+	PROTECT(breaks = allocVector(REALSXP,num_of_discrete_values));
+	PROTECT(counts = allocMatrix(REALSXP,num_of_discrete_values, number_of_summaries));
 
-	for (i=0;i<sum->num_of_discrete_values;i++)
-		REAL(breaks)[i] = sum->min + w*i;
-	for (i=0;i<sum->num_of_discrete_values;i++)
-		REAL(counts)[i] = sum->values[i];
+	for (i=0;i<num_of_discrete_values;i++)
+		REAL(breaks)[i] = min + w*i;
+
+	for (j=0;j<number_of_summaries;j++)
+		for (i=0;i<num_of_discrete_values;i++)
+			REAL(counts)[i+j*num_of_discrete_values] = sum[j]->values[i];
 
 	SET_STRING_ELT(l_names,0,mkChar("breaks"));
 	SET_STRING_ELT(l_names,1,mkChar("counts"));
 	SET_VECTOR_ELT(l,0,breaks);
 	SET_VECTOR_ELT(l,1,counts);
 	setAttrib(l,R_NamesSymbol,l_names);
-
 
 	UNPROTECT(3);
 
@@ -185,7 +195,7 @@ struct context
 /**
  * Initialize the context.
  *
- * @param context defines the context which is to be initalized
+ * @param context defines the context which is to be initialized
  * @param sets
  * @param sizes_of_sets
  * @param number_of_sets
@@ -739,7 +749,7 @@ bailout:
  *
  * @note TODO: Check whether sets are real sets.
  */
-SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP steps)
+SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP steps, SEXP restarts, SEXP threads)
 {
 	int *xo,*no,lo;
 	int **nsets, *lset, lsets;
@@ -753,6 +763,12 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	if (LENGTH(steps) != 1)
 		error("Parameter 'steps' needs to be atomic!");
 
+	if (LENGTH(restarts) != 1)
+		error("Parameter 'restarts' needs to be atomic!");
+
+	if (LENGTH(threads) != 1)
+		error("Parameter 'threads' needs to be atomic!");
+
 	PROTECT(n = AS_INTEGER(n));
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
@@ -760,6 +776,14 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	PROTECT(alpha = AS_NUMERIC(alpha));
 	PROTECT(beta = AS_NUMERIC(beta));
 	PROTECT(p = AS_NUMERIC(p));
+	PROTECT(restarts = AS_INTEGER(restarts));
+	PROTECT(threads = AS_INTEGER(threads));
+
+	if (INTEGER_VALUE(restarts) < 1)
+	{
+		error("Parameter 'restarts' needs to be larger than 0!");
+		goto bailout;
+	}
 
 	/* Observations */
 	xo = INTEGER_POINTER(o);
@@ -813,23 +837,44 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		UNPROTECT(1);
 	}
 
-	/* Create the result. TODO Use a list */
+	/* Create the result */
 	{
-		struct result r;
+		struct result *r;
+		int run;
+		int have_margs, have_alphas, have_betas, have_ps;
+		int irestarts = INTEGER_VALUE(restarts);
+
+		struct summary_for_cont_var *summaries[irestarts];
+
 		SEXP names;
+
+		if (!(r = (struct result*)R_alloc(irestarts,sizeof(*r))))
+			goto bailout;
+
+		have_margs = have_alphas = have_betas = have_ps = 0;
 
 		PROTECT(res = allocVector(VECSXP,4));
 		PROTECT(names = allocVector(STRSXP,4));
 
-		r = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0]);
+		for (run=0;run<irestarts;run++)
+		{
+			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0]);
 
-		if (r.marg_set_activity)
+			if (r[run].marg_set_activity) have_margs = 1;
+			if (r[run].alpha_summary) have_alphas = 1;
+			if (r[run].beta_summary) have_betas = 1;
+			if (r[run].p_summary) have_ps = 1;
+		}
+
+		if (have_margs)
 		{
 			SEXP marg;
-			PROTECT(marg = allocVector(REALSXP,lsets));
+			PROTECT(marg = allocMatrix(REALSXP,lsets,irestarts));
+			double *rmarg = REAL(marg);
 
-			for (i=0;i<lsets;i++)
-				REAL(marg)[i] = r.marg_set_activity[i];
+			for (run=0;run<irestarts;run++)
+				for (i=0;i<lsets;i++)
+					rmarg[run * lsets + i] = r[run].marg_set_activity[i];
 
 			SET_VECTOR_ELT(res,0,marg);
 			SET_STRING_ELT(names,0,mkChar("marg"));
@@ -837,8 +882,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
+		if (have_alphas)
 		{
-			SEXP alpha = create_R_representation_of_summary(r.alpha_summary);
+			/* Build summaries array */
+			for (run=0;run<irestarts;run++)
+				summaries[run] = r[run].alpha_summary;
+
+			SEXP alpha = create_R_representation_of_summary(summaries,irestarts);
 
 			SET_VECTOR_ELT(res,1,alpha);
 			SET_STRING_ELT(names,1,mkChar("alpha"));
@@ -846,8 +896,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
+		if (have_betas)
 		{
-			SEXP beta = create_R_representation_of_summary(r.beta_summary);
+			/* Build summaries array */
+			for (run=0;run<irestarts;run++)
+				summaries[run] = r[run].beta_summary;
+
+			SEXP beta = create_R_representation_of_summary(summaries,irestarts);
 
 			SET_VECTOR_ELT(res,2,beta);
 			SET_STRING_ELT(names,2,mkChar("beta"));
@@ -855,8 +910,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
+		if (have_ps)
 		{
-			SEXP p = create_R_representation_of_summary(r.p_summary);
+			/* Build summaries array */
+			for (run=0;run<irestarts;run++)
+				summaries[run] = r[run].p_summary;
+
+			SEXP p = create_R_representation_of_summary(summaries,irestarts);
 
 			SET_VECTOR_ELT(res,3,p);
 			SET_STRING_ELT(names,3,mkChar("p"));
@@ -864,13 +924,12 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
-
 		setAttrib(res,R_NamesSymbol,names);
 		UNPROTECT(2);
 	}
 
 bailout:
-	UNPROTECT(7);
+	UNPROTECT(9);
 	return res;
 }
 
@@ -906,7 +965,7 @@ SEXP mgsa_test(void)
 
 
 R_CallMethodDef callMethods[] = {
-   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 7},
+   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 9},
    {"mgsa_test", (DL_FUNC)&mgsa_test, 0},
    {NULL, NULL, 0}
 };

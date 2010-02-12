@@ -18,7 +18,7 @@ mgsa.go.demo<-function(goa.filename, gene.id.col = 3, go.id.col = 5, evidence.co
 	
 	# some flybase genes
 	observations<-c("vacu","vag","val","vanin-like","vap","vari","vas","vav","veg","veil","veli")
-	mgsa(observations,mapping)
+	mgsa(observations,mapping,restarts=2)
 
 	### Profiling
 	Rprof()

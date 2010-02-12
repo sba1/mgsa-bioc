@@ -188,7 +188,7 @@ setReplaceMethod(
 #)
 
 
-
+# TODO: Show mean
 ######## show
 setMethod(
 		"show",
@@ -216,7 +216,7 @@ setMethod(
 		}
 )
 
-
+# TODO: Plot mean
 ######## plot
 setMethod(
 		"plot",

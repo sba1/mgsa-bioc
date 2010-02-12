@@ -1,8 +1,8 @@
 #'
 #' Trampoline to jump into the fast C implementation.
 #'
-mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6 ){
-			res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps)
+mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0 ){
+			res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps, restarts, threads)
 			return (res)
 		}
 
@@ -19,11 +19,14 @@ mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6 ){
 #' @param beta
 #' @param p 
 #' @param steps number of MCMC steps to be performed
+#' @param restarts defines the number of restarts.
+#' @param threads defines number of threads to be used. Defaults to 0 which means that it
+#'        corresponds to the number of available cores. 
 #' 
 #' @return an object of class MgsaResults.
 #' 
 
-mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6){
+mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0){
 	## call to core function
 	raw <- mgsa.trampoline(o, sets, n, alpha=alpha, beta=beta, p=p, steps=steps)
 	
@@ -34,12 +37,14 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6){
 	populationSize(res) <- n
 	studySetSizeInPopulation(res) <- length(unique(unlist(o)))
 	
-	alphaPost(res) <- data.frame( value = raw$alpha$breaks, posterior = raw$alpha$counts/steps )
-	betaPost(res) <- data.frame( value = raw$beta$breaks, posterior = raw$beta$counts/steps )
-	pPost(res) <- data.frame( value = raw$p$breaks, posterior = raw$p$counts/steps )
+	## TODO: Store full matrix, at the moment, only the first column vector is stored
+	
+	alphaPost(res) <- data.frame( value = raw$alpha$breaks, posterior = raw$alpha$counts[,1]/steps )
+	betaPost(res) <- data.frame( value = raw$beta$breaks, posterior = raw$beta$counts[,1]/steps )
+	pPost(res) <- data.frame( value = raw$p$breaks, posterior = raw$p$counts[,1]/steps )
 	
 	setsResults(res) <- data.frame(
-			posterior = raw$marg,
+			posterior = raw$marg[,1],
 			inPopulation = sapply(sets, length),
 			inStudySet = sapply(sets, function(x) length(intersect(o,x)))
 	)
@@ -49,7 +54,7 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6){
 }
 
 #'
-#' The main function that treats case of character and integer.
+#' The main function that treats the case of character and integer inputs.
 #' 
 #' @param o 
 #' @param sets
@@ -58,8 +63,11 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6){
 #' @param beta
 #' @param p 
 #' @param steps number of MCMC steps to be performed
+#' @param restarts defines the number of restarts.
+#' @param threads defines number of threads to be used. Defaults to 0 which means that it
+#'        corresponds to the number of available cores. 
 #' 
-mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6){
+mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
@@ -86,7 +94,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 ## S4 implementation: generic declaration
 setGeneric(
 		"mgsa",
-		function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6 ){
+		function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0 ){
 			standardGeneric("mgsa")
 		}
 )
@@ -95,23 +103,23 @@ setGeneric(
 setMethod(
 		"mgsa",
 		signature = c(o="integer", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps) mgsa.main(o, sets, population, alpha, beta, p, steps)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads) mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
 )
 
 # o character and sets list
 setMethod(
 		"mgsa",
 		signature = c(o="character", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps) mgsa.main(o, sets, population, alpha, beta, p, steps)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads) mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
 )
 
 # o logical => coerce to integer with which() and call mgsa()
 setMethod(
 		"mgsa",
 		signature = c(o="logical", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps) {
-			if(is.null(population)) population <- 1:length(o)
-			mgsa( which(o), sets, population, alpha, beta, p, steps )
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
+			if (is.null(population)) population <- 1:length(o)
+			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads )
 		}
 )
 
@@ -120,17 +128,17 @@ setMethod(
 setMethod(
 		"mgsa",
 		signature = c(o="character", sets="MgsaMapping"),
-		function( o, sets, population, alpha, beta, p, steps) {
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper( sets@item.idx.map[o], sets@sets, length(sets@item.idx.map), alpha, beta, p, steps))
+				return(mgsa.wrapper( sets@item.idx.map[o], sets@sets, length(sets@item.idx.map), alpha, beta, p, steps, restarts, threads))
 			}
 			else
 			{
 				population<-sets@item.idx.map[population]
-				return(mgsa ( sets@item.idx.map[o], sets@sets, population, alpha, beta, p, steps))
+				return(mgsa ( sets@item.idx.map[o], sets@sets, population, alpha, beta, p, steps, restarts, threads))
 			}
 		}
 )
