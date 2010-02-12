@@ -4,21 +4,25 @@
 
 library(mgsa)
 
-# TODO: Find out why functions are no longer defined
-#source("../workspace/mgsa/R/mgsa_make_mapping.R")
-
 # Performs tests of random data
 #
 # e.g. mgsa.go.demo("/home/sba/.ontologizer/workspace/.cache/c5018986_0")
 #
 mgsa.go.demo<-function(goa.filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7)
 {
+	### Profiling
+	Rprof("mgsa_go_demo.Rprof"); 
+	
 	goa.filename<-"/home/sba/.ontologizer/workspace/.cache/c5018986_0"
 	mapping<-mgsa.make.go.mapping.from.goa(goa.filename)
 	
 	# some flybase genes
 	observations<-c("vacu","vag","val","vanin-like","vap","vari","vas","vav","veg","veil","veli")
 	mgsa(observations,mapping)
+
+	### Profiling
+	Rprof()
+	print(summaryRprof("mgsa_go_demo.Rprof")) 
 	
 	#
 	# random
