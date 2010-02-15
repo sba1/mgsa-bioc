@@ -4,10 +4,30 @@
 ######## Class definitions
 #### MgsaResults
 
+#'
+#' Note that representation is subject to change. Use the appropriate
+#' accessor function to access the attributes/slots.
+#' 
+#' Here are some internal details of the current implementation.
+#'  
+#' Attributes alphaPost, betaPost, and pPost are data frames, of which the first column
+#' represents a realization value, and subsequent columns the posterior probabilities of
+#' each MCMC run for that realization.
+#' 
+#' Attribute setsResults is a dataFrame in which the first columns represent the marginal
+#' posteriors of each set. The last two hold, for each set, the counts.
+#' 
+#' The current represenation is tightly coupled to an MCMC solver, which may
+#' or may not replaced in the furture. Therefore, everything is subject to change.
+#' You've been warned!
+#' 
+
 setClass(
         "MgsaResults",
         representation = representation(
 							numberOfSteps = "numeric", populationSize = "numeric", studySetSizeInPopulation="numeric",
+							numOfRestarts = "integer",
+# TODO: Wrap these into own classes
 							alphaPost = "data.frame", betaPost ="data.frame", pPost ="data.frame",
 							setsResults = "data.frame"
 			)
@@ -15,7 +35,7 @@ setClass(
 
 ######## Accessors and replacement methods
 
-#### numberOfSteps
+#### numberOfSteps, MCMC specific
 setGeneric( "numberOfSteps", function(x) standardGeneric( "numberOfSteps" ) )
 
 setMethod(
@@ -24,6 +44,9 @@ setMethod(
         function( x ) x@numberOfSteps
 )
 
+
+# Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "numberOfSteps<-", function( x, value ) standardGeneric( "numberOfSteps<-" ) )
 
 setReplaceMethod(
@@ -34,7 +57,6 @@ setReplaceMethod(
         }
 )
 
-
 #### populationSize
 setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
 
@@ -44,6 +66,8 @@ setMethod(
 		function( x ) x@populationSize
 )
 
+# FIXME: Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "populationSize<-", function( x, value ) standardGeneric( "populationSize<-" ) )
 
 setReplaceMethod(
@@ -65,6 +89,8 @@ setMethod(
 		function( x ) x@studySetSizeInPopulation
 )
 
+# FIXME: Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "studySetSizeInPopulation<-", function( x, value ) standardGeneric( "studySetSizeInPopulation<-" ) )
 
 setReplaceMethod(
@@ -83,9 +109,11 @@ setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
 setMethod(
 		"alphaPost",
 		signature( "MgsaResults" ),
-		function( x ) x@alphaPost
+		function( x ) data.frame(value=x@alphaPost[,1],posterior=rowMeans(x@alphaPost[,-1]))
 )
 
+# FIXME: Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "alphaPost<-", function( x, value ) standardGeneric( "alphaPost<-" ) )
 
 setReplaceMethod(
@@ -103,9 +131,11 @@ setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
 setMethod(
 		"betaPost",
 		signature( "MgsaResults" ),
-		function( x ) x@betaPost
+		function( x ) data.frame(value=x@betaPost[,1],posterior=rowMeans(x@betaPost[,-1]))
 )
 
+# FIXME: Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "betaPost<-", function( x, value ) standardGeneric( "betaPost<-" ) )
 
 setReplaceMethod(
@@ -123,9 +153,11 @@ setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
 setMethod(
 		"pPost",
 		signature( "MgsaResults" ),
-		function( x ) x@pPost
+		function( x ) data.frame(value=x@pPost[,1],posterior=rowMeans(x@pPost[,-1]))
 )
 
+# FIXME: Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "pPost<-", function( x, value ) standardGeneric( "pPost<-" ) )
 
 setReplaceMethod(
@@ -143,9 +175,11 @@ setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
 setMethod(
 		"setsResults",
 		signature( "MgsaResults" ),
-		function( x ) x@setsResults
+		function( x ) data.frame(x@setsResults[,c(x@numOfRestarts+1,x@numOfRestarts+2)],posterior=rowMeans(x@setsResults[,1:x@numOfRestarts]))
 )
 
+# FIXME: Do we need this? This is a convenience function, but a user should not be able
+# to set this attribute.
 setGeneric( "setsResults<-", function( x, value ) standardGeneric( "setsResults<-" ) )
 
 setReplaceMethod(

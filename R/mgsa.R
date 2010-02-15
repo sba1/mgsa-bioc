@@ -28,27 +28,25 @@ mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, rest
 
 mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0){
 	## call to core function
-	raw <- mgsa.trampoline(o, sets, n, alpha=alpha, beta=beta, p=p, steps=steps)
+	raw <- mgsa.trampoline(o, sets, n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads)
 	
 	## wrap raw results into a MgsaResults object
 	res <- new("MgsaResults")
 	
+	res@numOfRestarts <- as.integer(restarts)
 	numberOfSteps(res) <- steps
 	populationSize(res) <- n
 	studySetSizeInPopulation(res) <- length(unique(unlist(o)))
 	
-	## TODO: Store full matrix, at the moment, only the first column vector is stored
-	
-	alphaPost(res) <- data.frame( value = raw$alpha$breaks, posterior = raw$alpha$counts[,1]/steps )
-	betaPost(res) <- data.frame( value = raw$beta$breaks, posterior = raw$beta$counts[,1]/steps )
-	pPost(res) <- data.frame( value = raw$p$breaks, posterior = raw$p$counts[,1]/steps )
+	alphaPost(res) <- data.frame( value = raw$alpha$breaks, posterior=raw$alpha$counts/steps )
+	betaPost(res) <- data.frame( value = raw$beta$breaks, posterior=raw$beta$counts/steps )
+	pPost(res) <- data.frame( value = raw$p$breaks, posterior = raw$p$counts/steps )
 	
 	setsResults(res) <- data.frame(
-			posterior = raw$marg[,1],
+			posterior=raw$marg,
 			inPopulation = sapply(sets, length),
 			inStudySet = sapply(sets, function(x) length(intersect(o,x)))
 	)
-	rownames( setsResults(res) ) <- names(sets)
 	
 	return(res)
 }
@@ -87,7 +85,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 	sets <- lapply(sets, encode)
 	o <- encode(o)
 
-	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps))
+	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads))
 }
 
 
@@ -104,6 +102,16 @@ setMethod(
 		"mgsa",
 		signature = c(o="integer", sets="list"),
 		function( o, sets, population, alpha, beta, p, steps, restarts, threads) mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
+)
+
+# o numeric and sets list
+setMethod(
+		"mgsa",
+		signature = c(o="numeric", sets="list"),
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads)
+		{
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
+		}
 )
 
 # o character and sets list

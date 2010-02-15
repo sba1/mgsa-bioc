@@ -4,25 +4,43 @@
 
 library(mgsa)
 
+
+mgsa.demo<-function()
+{
+	res<-mgsa(c(1,2),list(a=c(1,2),b=c(3)),steps=1e6,restarts=10)
+	print(str(res))
+	print(res@setsResults)
+	print(alphaPost(res))
+	print(betaPost(res))
+	print(pPost(res))
+	print(setsResults(res))
+	show(res)
+	
+}
+
 # Performs tests of random data
 #
 # e.g. mgsa.go.demo("/home/sba/.ontologizer/workspace/.cache/c5018986_0")
 #
 mgsa.go.demo<-function(goa.filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7)
 {
+	# Basic
+	
 	### Profiling
-	Rprof("mgsa_go_demo.Rprof"); 
+#	Rprof("mgsa_go_demo.Rprof"); 
 	
 	goa.filename<-"/home/sba/.ontologizer/workspace/.cache/c5018986_0"
 	mapping<-mgsa.make.go.mapping.from.goa(goa.filename)
 	
 	# some flybase genes
 	observations<-c("vacu","vag","val","vanin-like","vap","vari","vas","vav","veg","veil","veli")
-	mgsa(observations,mapping,restarts=2)
+	res<-mgsa(observations,mapping,restarts=2)
+	
 
 	### Profiling
-	Rprof()
-	print(summaryRprof("mgsa_go_demo.Rprof")) 
+	print(str(res))
+#	Rprof()
+#	print(summaryRprof("mgsa_go_demo.Rprof")) 
 	
 	#
 	# random
@@ -53,4 +71,4 @@ mgsa.go.demo<-function(goa.filename, gene.id.col = 3, go.id.col = 5, evidence.co
 
 }
 
-mgsa.go.demo();
+mgsa.demo();
