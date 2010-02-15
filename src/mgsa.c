@@ -8,7 +8,7 @@
  *  "gcc mgsa.c -DSTANDALONE `R CMD config --cppflags` `R CMD config --ldflags` -o mgsa"
  *
  *  If you want to test using R something like
- *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);mgsa:::mgsa.trampoline(c(1,2),list(c(1,2),c(3)),3,steps=100,restarts=4)" | R --vanilla)"
+ *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);sets<-list(c(1,2),c(3));names(sets)<-c(\"set 1\", \"set 2\");mgsa:::mgsa.trampoline(c(1,2),sets,3,steps=100,restarts=4)" | R --vanilla)"
  *  or (for invoking the function directly)
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_mcmc\",list(c(1,2),c(3)),3,o=c(1,2),4,5,6,steps=100)" | R --vanilla)"
  *  or (for the test function)
@@ -866,6 +866,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			if (r[run].p_summary) have_ps = 1;
 		}
 
+		/* Store set marginals */
 		if (have_margs)
 		{
 			SEXP marg;
@@ -879,9 +880,21 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			SET_VECTOR_ELT(res,0,marg);
 			SET_STRING_ELT(names,0,mkChar("marg"));
 
+			/* Provide rownames, if any */
+			if (getAttrib(sets,R_NamesSymbol) != R_NilValue)
+			{
+				SEXP dimnames;
+
+				PROTECT(dimnames = allocVector(VECSXP,2));
+				SET_VECTOR_ELT(dimnames, 0, getAttrib(sets,R_NamesSymbol));
+				setAttrib(marg, R_DimNamesSymbol, dimnames);
+
+				UNPROTECT(1);
+			}
 			UNPROTECT(1);
 		}
 
+		/* Store alpha marginals */
 		if (have_alphas)
 		{
 			/* Build summaries array */
@@ -896,6 +909,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
+		/* Store beta marginals */
 		if (have_betas)
 		{
 			/* Build summaries array */
@@ -910,6 +924,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
+		/* Store p marginals */
 		if (have_ps)
 		{
 			/* Build summaries array */
