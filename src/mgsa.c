@@ -22,6 +22,8 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
+#include "mt19937p/mt19937p.c"
+
 /* Enable debugging */
 //#define DEBUG
 
