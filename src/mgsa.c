@@ -30,6 +30,26 @@
 /* Define if file should be compiled as standalone (mainly for testing purposes) */
 /* #define STANDALONE */
 
+/**
+ * Thread-safe variant of R_alloc().
+ *
+ * @return memory allocated by R_alloc().
+ * @note do not allocate memory too often.
+ */
+void *ts_R_alloc(size_t n, int size)
+{
+	void *mem;
+
+	#pragma omp critical
+	{
+		mem = R_alloc(n,size);
+	}
+	return mem;
+}
+
+/** Redirect R_alloc. I know, this is ugly... */
+#define R_alloc ts_R_alloc
+
 struct summary_for_cont_var
 {
 	double min;
