@@ -551,7 +551,7 @@ static double get_score(struct context *cn)
  * @brief Proposes a new state which can be undone via undo_proposal()
  * @param cn
  */
-static void propose_state(struct context *cn)
+static void propose_state(struct context *cn, struct mt19937p *mt)
 {
 	uint64_t possibilities = get_neighborhood_size(cn);
 
@@ -562,9 +562,9 @@ static void propose_state(struct context *cn)
 	cn->old_beta = -1;
 	cn->old_p = -1;
 
-	if (unif_rand() < 0.5)
+	if (genrand(mt) < 0.5)
 	{
-		uint32_t proposal = (double)(unif_rand() * possibilities);
+		uint32_t proposal = (double)(genrand(mt) * possibilities);
 
 		if (proposal < cn->number_of_sets)
 		{
@@ -589,19 +589,19 @@ static void propose_state(struct context *cn)
 		}
 	} else
 	{
-		double which_param = unif_rand();
+		double which_param = genrand(mt);
 		if (which_param < (1.0/3.0))
 		{
 			cn->old_alpha = cn->alpha;
-			cn->alpha = unif_rand();
+			cn->alpha = genrand(mt);
 		} else if (which_param < (2.0/3.0))
 		{
 			cn->old_beta = cn->beta;
-			cn->beta = unif_rand();
+			cn->beta = genrand(mt);
 		} else
 		{
 			cn->old_p = cn->p;
-			cn->p = unif_rand() / 8; /* FIXME: */
+			cn->p = genrand(mt) / 8; /* FIXME: */
 		}
 	}
 }
@@ -660,8 +660,9 @@ struct result
  * @param o indices of entities which are "on" (0 based).
  * @param lo length of o
  * @param number_of_steps defines the number of mcmc steps to be performed
+ * @param mt pre-seeded structure used for random number generation.
  */
-static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, double alpha, double beta, double p)
+static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, double alpha, double beta, double p, struct mt19937p *mt)
 {
 	int i;
 	int64_t step;
@@ -693,8 +694,6 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 #endif
 	memset(&res,0,sizeof(res));
 
-	GetRNGstate();
-
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
 		goto bailout;
 
@@ -716,7 +715,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		double u;
 		uint64_t new_neighborhood_size;
 
-		propose_state(&cn);
+		propose_state(&cn,mt);
 		new_score = get_score(&cn);
 		new_neighborhood_size = get_neighborhood_size(&cn);
 
@@ -725,7 +724,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		printf("score = %g new_score=%g alpha=%g beta=%g p=%g\n",score,new_score,get_alpha(&cn),get_beta(&cn),get_p(&cn));
 #endif
 
-		u = unif_rand();
+		u = genrand(mt);
 		if (u >= accept_probability)
 		{
 			undo_proposal(&cn);
@@ -748,8 +747,6 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		}
 	}
 #endif
-
-	PutRNGstate();
 
 	if (!(res.marg_set_activity = (double*)R_alloc(number_of_sets,sizeof(res.marg_set_activity[0]))))
 		goto bailout;
@@ -878,15 +875,30 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		PROTECT(res = allocVector(VECSXP,4));
 		PROTECT(names = allocVector(STRSXP,4));
 
+		GetRNGstate();
+
+		#pragma omp parallel for
 		for (run=0;run<irestarts;run++)
 		{
-			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0]);
+			struct mt19937p mt;
+			unsigned long seed;
+
+			#pragma omp critical
+			{
+				seed = (unif_rand() * (double)(INT32_MAX));
+			}
+
+			sgenrand(seed, &mt);
+
+			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0], &mt);
 
 			if (r[run].marg_set_activity) have_margs = 1;
 			if (r[run].alpha_summary) have_alphas = 1;
 			if (r[run].beta_summary) have_betas = 1;
 			if (r[run].p_summary) have_ps = 1;
 		}
+
+		PutRNGstate();
 
 		/* Store set marginals */
 		if (have_margs)
