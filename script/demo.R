@@ -16,13 +16,17 @@ topgo.demo<-function()
 	library(package = affyLib, character.only = TRUE)
 	sum(topDiffGenes(geneList))
 	sampleGOdata <- new("topGOdata", description = "Simple session", ontology = "BP",allGenes = geneList, geneSel = topDiffGenes, nodeSize = 10, annot = annFUN.db,affyLib = affyLib)
+	data<-sampleGOdata
+
+	o<-sigGenes(data)
+	sets<-genesInTerm(data)
 	
-	mgsa(sampleGOdata)	
+	print(mgsa(data),restarts=2)	
 }
 
 mgsa.demo<-function()
 {
-	res<-mgsa(c(1,2),list(a=c(1,2),b=c(3)),steps=1e6,restarts=10)
+	res<-mgsa(c(1,2),list(a=c(1,2),b=c(3)),steps=1e6,restarts=1)
 	print(str(res))
 	print(res@setsResults)
 	print(alphaPost(res))
@@ -86,4 +90,5 @@ mgsa.go.demo<-function(goa.filename, gene.id.col = 3, go.id.col = 5, evidence.co
 
 }
 
+topgo.demo();
 mgsa.demo();
