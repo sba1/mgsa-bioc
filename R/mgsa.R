@@ -137,6 +137,7 @@ setMethod(
 		}
 )
 
+#
 # topGO support is optional. It is provided for convenience
 #
 # Hmm...any ideas for doing this in a more elegant fashion?
@@ -149,7 +150,8 @@ if ("topGO" %in% installed.packages()[,1])
 			"mgsa",
 			signature = c(o="topGOdata",sets="missing"),
 			function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
-				print("Not implemented yet!")
+				data <- o
+				mgsa.main(sigGenes(data), genesInTerm(data), population, alpha, beta, p, steps, restarts, threads)
 			})
 }
 
