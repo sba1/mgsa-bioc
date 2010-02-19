@@ -101,7 +101,10 @@ setGeneric(
 setMethod(
 		"mgsa",
 		signature = c(o="integer", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads) mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads)
+		{
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
+		}
 )
 
 # o numeric and sets list
@@ -118,7 +121,10 @@ setMethod(
 setMethod(
 		"mgsa",
 		signature = c(o="character", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads) mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads)
+		{
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
+		}
 )
 
 # o logical => coerce to integer with which() and call mgsa()
@@ -130,6 +136,23 @@ setMethod(
 			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads )
 		}
 )
+
+# topGO support is optional. It is provided for convenience
+#
+# Hmm...any ideas for doing this in a more elegant fashion?
+# (sets is not required at all here)
+if ("topGO" %in% installed.packages()[,1])
+{
+	library(topGO)
+
+	setMethod(
+			"mgsa",
+			signature = c(o="topGOdata",sets="missing"),
+			function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
+				print("Not implemented yet!")
+			})
+}
+
 
 # o character and mapping object
 # TODO: make it also work with integers
