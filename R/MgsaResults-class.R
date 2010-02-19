@@ -102,6 +102,7 @@ setReplaceMethod(
 )
 
 
+#### FIXME: No longer works when restart was 1
 
 #### alphaPost
 setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
