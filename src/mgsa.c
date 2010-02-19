@@ -17,6 +17,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
+
 #include <R.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
@@ -29,6 +33,8 @@
 
 /* Define if file should be compiled as standalone (mainly for testing purposes) */
 /* #define STANDALONE */
+
+#define MIN(a,b) ((a)<(b)?(a):(b))
 
 /**
  * Thread-safe variant of R_alloc().
@@ -862,6 +868,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		int run;
 		int have_margs, have_alphas, have_betas, have_ps;
 		int irestarts = INTEGER_VALUE(restarts);
+		int ithreads = INTEGER_VALUE(threads);
 
 		struct summary_for_cont_var *summaries[irestarts];
 
@@ -876,6 +883,11 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		PROTECT(names = allocVector(STRSXP,4));
 
 		GetRNGstate();
+
+
+#ifdef HAVE_OPENMP
+		omp_set_num_threads(MIN(threads,omp_get_num_procs()));
+#endif
 
 		#pragma omp parallel for
 		for (run=0;run<irestarts;run++)
