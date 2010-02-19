@@ -14,6 +14,8 @@
  *  or (for the test function)
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
+
+#include <signal.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -36,6 +38,9 @@
 /* #define STANDALONE */
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
+
+/** Global variable which is set to 1, if thread has been interrupted */
+static int is_interrupted;
 
 /**
  * Thread-safe variant of R_alloc().
@@ -724,6 +729,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 
 		/* TODO: Add this function (but take care of threading) */
 /*		R_CheckUserInterrupt();*/
+		/* Break, if we are interrupted */
+		if (is_interrupted) break;
 
 		propose_state(&cn,mt);
 		new_score = get_score(&cn);
@@ -772,6 +779,18 @@ bailout:
 	return res;
 }
 
+
+/**
+ * Interrupt handler. Simply sets gloabl is_interrupted flag.
+ *
+ * @param sig
+ */
+static void signal_handler(int sig)
+{
+	/* Set interruption flag */
+	is_interrupted = 1;
+}
+
 /**
  * @param n the number of observable entities.
  * @param o (1 based)
@@ -783,6 +802,12 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	int *xo,*no,lo;
 	int **nsets, *lset, lsets;
 	int i,j;
+
+	/* Clear interruption flag */
+	is_interrupted = 0;
+
+	/* Call this function, when interruption occurs */
+	signal(SIGINT,signal_handler);
 
 	SEXP res = NULL_USER_OBJECT;
 
@@ -914,6 +939,11 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			if (r[run].p_summary) have_ps = 1;
 		}
 
+		if (is_interrupted)
+		{
+			error("***Break");
+			goto bailout;
+		}
 		PutRNGstate();
 
 		/* Store set marginals */
