@@ -897,7 +897,6 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		int run;
 		int have_margs, have_alphas, have_betas, have_ps;
 		int irestarts = INTEGER_VALUE(restarts);
-		int ithreads = INTEGER_VALUE(threads);
 
 		struct summary_for_cont_var *summaries[irestarts];
 
@@ -915,7 +914,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 
 #ifdef HAVE_OPENMP
-		omp_set_num_threads(MIN(ithreads,omp_get_num_procs()));
+		{
+			int ithreads = INTEGER_VALUE(threads);
+			if (ithreads != 0)
+			{
+				omp_set_num_threads(MIN(ithreads,omp_get_num_procs()));
+			}
+		}
 #endif
 
 		#pragma omp parallel for
