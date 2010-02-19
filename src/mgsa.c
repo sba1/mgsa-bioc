@@ -25,6 +25,7 @@
 #include <Rdefines.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
+#include <R_ext/Utils.h>
 
 #include "mt19937p/mt19937p.c"
 
@@ -721,6 +722,9 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		double u;
 		uint64_t new_neighborhood_size;
 
+		/* TODO: Add this function (but take care of threading) */
+/*		R_CheckUserInterrupt();*/
+
 		propose_state(&cn,mt);
 		new_score = get_score(&cn);
 		new_neighborhood_size = get_neighborhood_size(&cn);
@@ -886,7 +890,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 
 #ifdef HAVE_OPENMP
-		omp_set_num_threads(MIN(threads,omp_get_num_procs()));
+		omp_set_num_threads(MIN(ithreads,omp_get_num_procs()));
 #endif
 
 		#pragma omp parallel for
