@@ -273,7 +273,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 		cn->observable[o[i]] = 1;
 
 	/* Summary related */
-	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(n,sizeof(cn->sets_activity_count[0]))))
+	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
 	memset(cn->sets_activity_count,0,n * sizeof(cn->sets_activity_count[0]));
 	if (!(cn->alpha_summary = new_summary_for_cont_var(0,1,10)))
