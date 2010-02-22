@@ -21,7 +21,7 @@ topgo.demo<-function()
 	o<-sigGenes(data)
 	sets<-genesInTerm(data)
 	
-	print(mgsa(data),restarts=2)	
+	print(mgsa(data),restarts=1)	
 }
 
 mgsa.demo<-function()

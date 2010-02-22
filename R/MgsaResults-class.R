@@ -32,6 +32,17 @@ setClass(
 							setsResults = "data.frame"
 			)
 )
+######## Helper
+
+mgsa.rowmeans <- function(matrix)
+{
+	if (is.matrix(matrix))
+	{
+		return(rowMeans(matrix))
+	}
+	
+	return(matrix)
+}
 
 ######## Accessors and replacement methods
 
@@ -102,15 +113,13 @@ setReplaceMethod(
 )
 
 
-#### FIXME: No longer works when restart was 1
-
 #### alphaPost
 setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
 
 setMethod(
 		"alphaPost",
 		signature( "MgsaResults" ),
-		function( x ) data.frame(value=x@alphaPost[,1],posterior=rowMeans(x@alphaPost[,-1]))
+		function( x ) data.frame(value=x@alphaPost[,1],posterior=mgsa.rowmeans(x@alphaPost[,-1]))
 )
 
 # FIXME: Do we need this? This is a convenience function, but a user should not be able
@@ -132,7 +141,7 @@ setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
 setMethod(
 		"betaPost",
 		signature( "MgsaResults" ),
-		function( x ) data.frame(value=x@betaPost[,1],posterior=rowMeans(x@betaPost[,-1]))
+		function( x ) data.frame(value=x@betaPost[,1],posterior=mgsa.rowmeans(x@betaPost[,-1]))
 )
 
 # FIXME: Do we need this? This is a convenience function, but a user should not be able
@@ -154,7 +163,7 @@ setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
 setMethod(
 		"pPost",
 		signature( "MgsaResults" ),
-		function( x ) data.frame(value=x@pPost[,1],posterior=rowMeans(x@pPost[,-1]))
+		function( x ) data.frame(value=x@pPost[,1],posterior=mgsa.rowmeans(x@pPost[,-1]))
 )
 
 # FIXME: Do we need this? This is a convenience function, but a user should not be able
@@ -176,7 +185,7 @@ setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
 setMethod(
 		"setsResults",
 		signature( "MgsaResults" ),
-		function( x ) data.frame(x@setsResults[,c(x@numOfRestarts+1,x@numOfRestarts+2)],posterior=rowMeans(x@setsResults[,1:x@numOfRestarts]))
+		function( x ) data.frame(x@setsResults[,c(x@numOfRestarts+1,x@numOfRestarts+2)],posterior=mgsa.rowmeans(x@setsResults[,1:x@numOfRestarts]))
 )
 
 # FIXME: Do we need this? This is a convenience function, but a user should not be able
