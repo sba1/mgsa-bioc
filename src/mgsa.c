@@ -233,14 +233,17 @@ struct context
  * @param sets
  * @param sizes_of_sets
  * @param number_of_sets
- * @param n
+ * @param n number of items
  * @param o
- * @param lo
+ * @param lo number of items that are observed as true (<=n)
  * @return
  */
 static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo)
 {
 	int i;
+#ifdef DEBUG
+printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
+#endif
 
 	cn->number_of_sets = number_of_sets;
 	cn->sets = sets;
@@ -275,7 +278,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	/* Summary related */
 	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
-	memset(cn->sets_activity_count,0,n * sizeof(cn->sets_activity_count[0]));
+	memset(cn->sets_activity_count,0,number_of_sets * sizeof(cn->sets_activity_count[0]));
 	if (!(cn->alpha_summary = new_summary_for_cont_var(0,1,10)))
 		goto bailout;
 	if (!(cn->beta_summary = new_summary_for_cont_var(0,1,10)))
@@ -727,9 +730,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		double u;
 		uint64_t new_neighborhood_size;
 
-		/* TODO: Add this function (but take care of threading) */
-/*		R_CheckUserInterrupt();*/
-		/* Break, if we are interrupted */
+		/* Break, if we are interrupted (we cannot use R_CheckUserInterrupt() here,
+		 * as this is not thread-safe */
 		if (is_interrupted) break;
 
 		propose_state(&cn,mt);
