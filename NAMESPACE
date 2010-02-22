@@ -10,7 +10,9 @@ exportClasses(
 exportMethods(
               "alphaPost", "alphaPost<-",
               "betaPost", "betaPost<-",
+              "getItemsIndices", 
               "mgsa",
+              "MgsaMapping",
               "numberOfSteps", "numberOfSteps<-",
               "plot",  
               "populationSize", "populationSize<-",

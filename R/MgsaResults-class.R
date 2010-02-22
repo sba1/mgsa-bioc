@@ -36,7 +36,7 @@ setClass(
 
 mgsa.rowmeans <- function(matrix)
 {
-	if (is.matrix(matrix))
+	if (is.data.frame(matrix) || is.matrix(matrix))
 	{
 		return(rowMeans(matrix))
 	}
@@ -251,6 +251,9 @@ setMethod(
 					" steps.\n",
 					sep = ""
 			)
+			
+			print(str(setsResults(object)))
+			
 			cat("\nPosterior on set activity (decreasing order):\n")
 			nrowShow <- min (10 , nrow(setsResults(object)) )
 			print( setsResults(object)[ order(setsResults(object)$posterior, decreasing = TRUE)[1:nrowShow], ] )

@@ -49,12 +49,10 @@ mgsa.make.go.mapping<-function(go.ids,items)
 	levels(all.items)<-1:length(unique(all.items))
 
 	sets<-split(as.integer(all.items),all$id)
-	map.vec<-1:length(all.items.names)
-	names(map.vec)<-all.items.names
+	itemName2ItemIndex<-1:length(all.items.names)
+	names(itemName2ItemIndex)<-all.items.names
 
-	mapping<-new("MgsaGoMapping");
-	mapping@sets<-sets
-	mapping@item.idx.map<-map.vec
+	mapping<-new("MgsaGoMapping",sets=sets,itemName2ItemIndex=itemName2ItemIndex);
 	
 	return(mapping)
 }

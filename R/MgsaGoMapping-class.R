@@ -6,3 +6,4 @@ setClass(
 		),
 		contains = "MgsaMapping"
 )
+

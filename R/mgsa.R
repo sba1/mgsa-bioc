@@ -142,7 +142,7 @@ setMethod(
 #
 # Hmm...any ideas for doing this in a more elegant fashion?
 # (sets is not required at all here)
-if ("topGO" %in% installed.packages()[,1])
+if (F) # "topGO" %in% installed.packages()[,1])
 {
 	library(topGO)
 
@@ -166,12 +166,12 @@ setMethod(
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper( sets@item.idx.map[o], sets@sets, length(sets@item.idx.map), alpha, beta, p, steps, restarts, threads))
+				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads))
 			}
 			else
 			{
-				population<-sets@item.idx.map[population]
-				return(mgsa ( sets@item.idx.map[o], sets@sets, population, alpha, beta, p, steps, restarts, threads))
+				population<-getItemsIndices(sets,population)
+				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads))
 			}
 		}
 )
