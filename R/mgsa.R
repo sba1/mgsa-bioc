@@ -80,11 +80,14 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 		population <- sort(unique(population))
 	}
 	
+	
 	## encoding (index mapping) of the elements
 	encode <- function(x){ match( intersect(x, population), population) }
 	sets <- lapply(sets, encode)
 	o <- encode(o)
 
+	sets<-subset(sets,lapply(sets,length)>0)
+	
 	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads))
 }
 

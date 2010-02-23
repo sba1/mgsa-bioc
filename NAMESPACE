@@ -11,6 +11,7 @@ exportMethods(
               "alphaPost", "alphaPost<-",
               "betaPost", "betaPost<-",
               "getItemsIndices", 
+              "getSubMapping",
               "mgsa",
               "MgsaMapping",
               "numberOfSteps", "numberOfSteps<-",

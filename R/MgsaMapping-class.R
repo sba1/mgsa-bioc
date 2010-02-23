@@ -25,10 +25,14 @@ setClass(
 setMethod("initialize", "MgsaMapping",
 					function(.Object, ...) {
 						.Object <- callNextMethod()
+						
+						# Needs numberOfItems to be initialized?
 						if (length(.Object@numberOfItems) == 0)
 						{
+							# Needs itemName2ItemIndex to be initialized?
 							if (length(.Object@itemName2ItemIndex) == 0)
 							{
+								# But do this only, if there is actually a set
 								if (length(.Object@sets) != 0)
 								{
 									sets<-.Object@sets
@@ -64,8 +68,9 @@ setMethod("initialize", "MgsaMapping",
 						.Object
 					})
 
+#'
 #' Constructor
-
+#' 
 setGeneric("MgsaMapping", function(sets) standardGeneric("MgsaMapping"))
 
 setMethod(
@@ -75,7 +80,7 @@ setMethod(
 )
 
 
-#
+#'
 #' Returns the indices corresponding to the items
 #'
 setGeneric("getItemsIndices", function(mapping, items) standardGeneric("getItemsIndices"))
@@ -86,8 +91,58 @@ setMethod(
 		function( mapping, items ) mapping@itemName2ItemIndex[items]
 )
 
-#' The basic case, we just add a validity check on top of this
 setMethod(
 		"getItemsIndices",
 		signature( "MgsaMapping", "numeric" ),
 		function( mapping, items ) mapping@itemName2ItemIndex[items])
+
+
+#'
+#' Returns a subset of mapping, i.e., a mapping, in which only the given
+#' items are assinged to sets. The number of sets of this mapping may also differ.
+#' 
+setGeneric("getSubMapping", function(mapping, items) standardGeneric("getSubMapping"))
+
+setMethod(
+		"getSubMapping",
+		signature( "MgsaMapping", "numeric" ),
+		function( mapping, items )
+		{
+			sets<-mapping@sets
+			subset.contains<-items
+
+			if (T)
+			{
+				encode <- function(x){ match( intersect(x, items), items) }
+				subsets <- lapply(sets, encode)
+				subsets <- subset(subsets,lapply(subsets,length)>0)
+			} else
+			{
+				#
+				# We create the subset mapping by the following juggling
+				#
+				
+				# We assume that each set has name
+				if (is.null(names(sets))) names(sets)<-1:length(sets)
+				
+				# First, construct a item->set mapping
+				# we assume that each item has at least one set
+				set.names<-rep(names(sets),lapply(sets,length))
+				set.items<-unlist(sets,use.names=F)
+				items<-split(set.names,set.items)
+				
+				# Take the subset
+				items.subset<-items[subset.contains]
+				
+				# Create a new set->item mapping based on the item subset
+				subitem.names<-rep(names(items.subset),lapply(items.subset,length))
+				subitem.names.f<-factor(subitem.names)
+				levels(subitem.names.f)<-1:length(levels(subitem.names.f))		# relabel the genes
+				subitem.sets<-unlist(items.subset,use.names=F)
+				subsets<-split(as.vector(subitem.names.f),subitem.sets)
+			}
+
+			mapping<-new("MgsaMapping",sets=subsets)
+			
+			return(mapping)
+		})
