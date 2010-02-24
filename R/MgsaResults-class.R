@@ -23,183 +23,29 @@
 #' 
 
 setClass(
-        "MgsaResults",
-        representation = representation(
-							numberOfSteps = "numeric", populationSize = "numeric", studySetSizeInPopulation="numeric",
-							numOfRestarts = "integer",
-# TODO: Wrap these into own classes
-							alphaPost = "data.frame", betaPost ="data.frame", pPost ="data.frame",
-							setsResults = "data.frame"
-			)
+		"MgsaResults",
+		representation = representation(
+				populationSize = "numeric",
+				studySetSizeInPopulation="numeric",
+				alphaPost = "data.frame", betaPost ="data.frame", pPost ="data.frame",
+				setsResults = "data.frame"
+		)
 )
-######## Helper
 
-mgsa.rowmeans <- function(matrix)
-{
-	if (is.data.frame(matrix) || is.matrix(matrix))
-	{
-		return(rowMeans(matrix))
-	}
-	
-	return(matrix)
-}
+
+#### MgsaMcmcResults
+setClass(
+		"MgsaMcmcResults",
+		contains = "MgsaResults",
+		representation = representation(
+				steps = "numeric",
+				restarts = "numeric",
+				alphaMcmcPost = "matrix", betaMcmcPost = "matrix", pMcmcPost ="matrix", setsMcmcPost = "matrix"
+		)
+)
 
 ######## Accessors and replacement methods
-
-#### numberOfSteps, MCMC specific
-setGeneric( "numberOfSteps", function(x) standardGeneric( "numberOfSteps" ) )
-
-setMethod(
-        "numberOfSteps",
-        signature( "MgsaResults" ),
-        function( x ) x@numberOfSteps
-)
-
-
-# Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "numberOfSteps<-", function( x, value ) standardGeneric( "numberOfSteps<-" ) )
-
-setReplaceMethod(
-        "numberOfSteps", "MgsaResults",
-        function( x, value ) {
-            x@numberOfSteps <- value
-            return(x)
-        }
-)
-
-#### populationSize
-setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
-
-setMethod(
-		"populationSize",
-		signature( "MgsaResults" ),
-		function( x ) x@populationSize
-)
-
-# FIXME: Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "populationSize<-", function( x, value ) standardGeneric( "populationSize<-" ) )
-
-setReplaceMethod(
-		"populationSize", "MgsaResults",
-		function( x, value ) {
-			x@populationSize <- value
-			return(x)
-		}
-)
-
-
-
-#### studySetSizeInPopulation
-setGeneric( "studySetSizeInPopulation", function(x) standardGeneric( "studySetSizeInPopulation" ) )
-
-setMethod(
-		"studySetSizeInPopulation",
-		signature( "MgsaResults" ),
-		function( x ) x@studySetSizeInPopulation
-)
-
-# FIXME: Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "studySetSizeInPopulation<-", function( x, value ) standardGeneric( "studySetSizeInPopulation<-" ) )
-
-setReplaceMethod(
-		"studySetSizeInPopulation", "MgsaResults",
-		function( x, value ) {
-			x@studySetSizeInPopulation <- value
-			return(x)
-		}
-)
-
-
-#### alphaPost
-setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
-
-setMethod(
-		"alphaPost",
-		signature( "MgsaResults" ),
-		function( x ) data.frame(value=x@alphaPost[,1],posterior=mgsa.rowmeans(x@alphaPost[,-1]))
-)
-
-# FIXME: Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "alphaPost<-", function( x, value ) standardGeneric( "alphaPost<-" ) )
-
-setReplaceMethod(
-		"alphaPost", "MgsaResults",
-		function( x, value ) {
-			x@alphaPost <- value
-			return(x)
-		}
-)
-
-
-#### betaPost
-setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
-
-setMethod(
-		"betaPost",
-		signature( "MgsaResults" ),
-		function( x ) data.frame(value=x@betaPost[,1],posterior=mgsa.rowmeans(x@betaPost[,-1]))
-)
-
-# FIXME: Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "betaPost<-", function( x, value ) standardGeneric( "betaPost<-" ) )
-
-setReplaceMethod(
-		"betaPost", "MgsaResults",
-		function( x, value ) {
-			x@betaPost <- value
-			return(x)
-		}
-)
-
-
-#### pPost
-setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
-
-setMethod(
-		"pPost",
-		signature( "MgsaResults" ),
-		function( x ) data.frame(value=x@pPost[,1],posterior=mgsa.rowmeans(x@pPost[,-1]))
-)
-
-# FIXME: Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "pPost<-", function( x, value ) standardGeneric( "pPost<-" ) )
-
-setReplaceMethod(
-		"pPost", "MgsaResults",
-		function( x, value ) {
-			x@pPost <- value
-			return(x)
-		}
-)
-
-
-#### setsResult
-setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
-
-setMethod(
-		"setsResults",
-		signature( "MgsaResults" ),
-		function( x ) data.frame(x@setsResults[,c(x@numOfRestarts+1,x@numOfRestarts+2)],posterior=mgsa.rowmeans(x@setsResults[,1:x@numOfRestarts]))
-)
-
-# FIXME: Do we need this? This is a convenience function, but a user should not be able
-# to set this attribute.
-setGeneric( "setsResults<-", function( x, value ) standardGeneric( "setsResults<-" ) )
-
-setReplaceMethod(
-		"setsResults", "MgsaResults",
-		function( x, value ) {
-			x@setsResults <- value
-			return(x)
-		}
-)
-
+## add some only if really needed
 
 
 ######### print
@@ -216,7 +62,7 @@ setReplaceMethod(
 #					studySetSizeInPopulation(x),
 #					" unique elements both in study set and in population.\n",
 #					"The MCMC was run with ",
-#					numberOfSteps(x),
+#					steps(x),
 #					" steps.\n",
 #					sep = ""
 #			)
@@ -242,23 +88,20 @@ setMethod(
 					"Object of class ",
 					class( object ),
 					"\n",
-					populationSize(object),
+					object@populationSize,
 					" unique elements in population.\n",
-					studySetSizeInPopulation(object),
+					object@studySetSizeInPopulation,
 					" unique elements both in study set and in population.\n",
-					"The MCMC was run with ",
-					numberOfSteps(object),
-					" steps.\n",
 					sep = ""
 			)
 			
-			print(str(setsResults(object)))
+			print(str(object@setsResults))
 			
 			cat("\nPosterior on set activity (decreasing order):\n")
-			nrowShow <- min (10 , nrow(setsResults(object)) )
-			print( setsResults(object)[ order(setsResults(object)$posterior, decreasing = TRUE)[1:nrowShow], ] )
-			if(nrowShow < nrow(setsResults(object)) ){
-				cat("... and ", nrow(setsResults(object)) - nrowShow, " other sets.\n" )
+			nrowShow <- min (10 , nrow(object@setsResults) )
+			print( object@setsResults[ order(object@setsResults$estimate, decreasing = TRUE)[1:nrowShow], ] )
+			if(nrowShow < nrow(object@setsResults) ){
+				cat("... and ", nrow(object@setsResults) - nrowShow, " other sets.\n" )
 			}
 		}
 )
@@ -269,15 +112,34 @@ setMethod(
 		"plot",
 		signature( "MgsaResults" ),
 		function( x, y, ... ){
-			par( mfrow=c(2,2) )
+			require(gplots)
+			par( mfrow=c(2,3) )
+			
+			nrowShow <- min (10 , nrow(x@setsResults) )
+			sr = x@setsResults[ rev(order(x@setsResults$estimate, decreasing = TRUE)[1:nrowShow]), ]
+			
+			## bar plot top ones
+			barplot2(
+					sr$estimate,
+					names.arg=rownames(sr),
+					las = 1,
+					col = "white",
+					plot.ci = TRUE,
+					ci.l= sr$estimate - sr$std.error,
+					ci.u = sr$estimate + sr$std.error,
+					horiz = TRUE,
+					xlab = "Posterior probability (+/- std error)",
+					xlim = c(0,1)
+			)
+			
 			## sets 
-			plot( setsResults(x)$posterior, xlab="Set", ylab="Posterior" )
+			plot( x@setsResults$estimate, xlab="Set", ylab="Posterior" )
 			## p 
-			with( pPost(x), plot( value, posterior, xlab="p", ylab="Posterior" ) )
+			with( x@pPost, plot( value, estimate, xlab="p", ylab="Posterior" ) )
 			## alpha 
-			with( alphaPost(x), plot( value, posterior, xlab=expression(alpha), ylab="Posterior" ) )
+			with( x@alphaPost, plot( value, estimate, xlab=expression(alpha), ylab="Posterior" ) )
 			## beta 
-			with( betaPost(x), plot( value, posterior, xlab=expression(beta), ylab="Posterior" ) )
+			with( x@betaPost, plot( value, estimate, xlab=expression(beta), ylab="Posterior" ) )
 		}
 )
 

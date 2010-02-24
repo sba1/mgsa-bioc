@@ -8,19 +8,12 @@ exportClasses(
               )
 
 exportMethods(
-              "alphaPost", "alphaPost<-",
-              "betaPost", "betaPost<-",
               "getItemsIndices", 
               "getSubMapping",
               "mgsa",
               "MgsaMapping",
-              "numberOfSteps", "numberOfSteps<-",
               "plot",  
-              "populationSize", "populationSize<-",
-              "pPost", "pPost<-",
-              "setsResults", "setsResults<-",
-              "show",
-              "studySetSizeInPopulation", "studySetSizeInPopulation<-"
+              "show"
               )
 
 export(

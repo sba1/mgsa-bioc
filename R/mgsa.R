@@ -2,9 +2,9 @@
 #' Trampoline to jump into the fast C implementation.
 #'
 mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0 ){
-			res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps, restarts, threads)
-			return (res)
-		}
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps, restarts, threads)
+	return (res)
+}
 
 
 #'
@@ -18,34 +18,47 @@ mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, rest
 #' @param alpha
 #' @param beta
 #' @param p 
-#' @param steps number of MCMC steps to be performed
+#' @param steps defines the number of MCMC steps to be performed
 #' @param restarts defines the number of restarts.
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
 #'        corresponds to the number of available cores. 
 #' 
-#' @return an object of class MgsaResults.
+#' @return an object of class MgsaMcmcResults.
 #' 
+
+## helper function
+# x : a matrix of values with as a many columns as MCMC runs  
+# returns a point estimate for each row (the mean) and std.error of the mean 
+mcmcSummary <- function(x){
+	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
+}
 
 mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0){
 	## call to core function
 	raw <- mgsa.trampoline(o, sets, n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads)
 	
 	## wrap raw results into a MgsaResults object
-	res <- new("MgsaResults")
+	res <- new("MgsaMcmcResults")
 	
-	res@numOfRestarts <- as.integer(restarts)
-	numberOfSteps(res) <- steps
-	populationSize(res) <- n
-	studySetSizeInPopulation(res) <- length(unique(unlist(o)))
+	res@restarts <- restarts
+	res@steps <- steps
+	res@populationSize <- n
+	res@studySetSizeInPopulation <- length(unique(unlist(o)))
 	
-	alphaPost(res) <- data.frame( value = raw$alpha$breaks, posterior=raw$alpha$counts/steps )
-	betaPost(res) <- data.frame( value = raw$beta$breaks, posterior=raw$beta$counts/steps )
-	pPost(res) <- data.frame( value = raw$p$breaks, posterior = raw$p$counts/steps )
+	res@alphaMcmcPost <- matrix(raw$alpha$counts/steps, ncol=restarts)
+	res@betaMcmcPost <- matrix(raw$beta$counts/steps, ncol=restarts)
+	res@pMcmcPost <- matrix(raw$p$counts/steps, ncol=restarts)
+	res@setsMcmcPost <- matrix(raw$marg, ncol=restarts)
 	
-	setsResults(res) <- data.frame(
-			posterior=raw$marg,
+	
+	res@alphaPost <- data.frame( value = raw$alpha$breaks, mcmcSummary(res@alphaMcmcPost) )
+	res@betaPost <- data.frame( value = raw$beta$breaks, mcmcSummary(res@betaMcmcPost) )
+	res@pPost <- data.frame( value = raw$p$breaks, mcmcSummary(res@pMcmcPost) )
+	
+	res@setsResults <- data.frame(
 			inPopulation = sapply(sets, length),
-			inStudySet = sapply(sets, function(x) length(intersect(o,x)))
+			inStudySet = sapply(sets, function(x) length(intersect(o,x))),
+			mcmcSummary(res@setsMcmcPost)
 	)
 	
 	return(res)
@@ -85,7 +98,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 	encode <- function(x){ match( intersect(x, population), population) }
 	sets <- lapply(sets, encode)
 	o <- encode(o)
-
+	
 	sets<-subset(sets,lapply(sets,length)>0)
 	
 	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads))
@@ -148,7 +161,7 @@ setMethod(
 if (F) # "topGO" %in% installed.packages()[,1])
 {
 	library(topGO)
-
+	
 	setMethod(
 			"mgsa",
 			signature = c(o="topGOdata",sets="missing"),

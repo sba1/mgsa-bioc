@@ -67,3 +67,12 @@ t <- system.time(r <- mgsa(o==1, sets, steps=number.of.steps))
 print(t)
 print(r)
 plot(r)
+
+## several 
+## on purpose small length to be able to see the error bars
+r <- mgsa(o==1, sets, steps=1e3, restarts=10)
+print(r)
+plot(r)
+
+
+
