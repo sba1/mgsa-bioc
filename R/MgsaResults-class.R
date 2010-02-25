@@ -113,12 +113,17 @@ setMethod(
 		signature( "MgsaResults" ),
 		function( x, y, ... ){
 			require(gplots)
-			par( mfrow=c(2,3) )
+			#par( mfrow=c(2,3) )
 			
 			nrowShow <- min (10 , nrow(x@setsResults) )
 			sr = x@setsResults[ rev(order(x@setsResults$estimate, decreasing = TRUE)[1:nrowShow]), ]
 			
+			split.screen(c(2,1))  
+			split.screen(c(1,2), screen=1)
+			split.screen(c(1,3), screen=2)
+			
 			## bar plot top ones
+			screen(3)
 			barplot2(
 					sr$estimate,
 					names.arg=rownames(sr),
@@ -133,12 +138,19 @@ setMethod(
 			)
 			
 			## sets 
+			screen(4)
 			plot( x@setsResults$estimate, xlab="Set", ylab="Posterior" )
-			## p 
+			
+			## p
+			screen(5)
 			with( x@pPost, plot( value, estimate, xlab="p", ylab="Posterior" ) )
-			## alpha 
+			
+			## alpha
+			screen(6)
 			with( x@alphaPost, plot( value, estimate, xlab=expression(alpha), ylab="Posterior" ) )
-			## beta 
+			
+			## beta
+			screen(7)
 			with( x@betaPost, plot( value, estimate, xlab=expression(beta), ylab="Posterior" ) )
 		}
 )
