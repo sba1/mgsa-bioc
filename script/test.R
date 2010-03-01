@@ -38,6 +38,13 @@ print(t)
 print(r)
 plot(r)
 
+## integer, list, setting alpha and beta grids
+cat("mgsa: integer, list, setting alpha and beta grids:\n")
+r <- mgsa(which(o==1), sets, steps=number.of.steps, alpha = 0.01*1:10, beta = 0.01*1:10)
+print(r)
+plot(r)
+
+
 ## from now on with set names
 names(sets) <- paste("set",1:length(sets), sep="_")
 cat("mgsa: integer, list:\n")
@@ -73,6 +80,7 @@ plot(r)
 r <- mgsa(o==1, sets, steps=1e3, restarts=10)
 print(r)
 plot(r)
+
 
 
 

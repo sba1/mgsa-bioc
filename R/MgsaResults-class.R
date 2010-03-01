@@ -124,6 +124,7 @@ setMethod(
 			
 			## bar plot top ones
 			screen(3)
+			par(mar = c(5, 8, 4, 2) + 0.1)
 			barplot2(
 					sr$estimate,
 					names.arg=rownames(sr),
@@ -136,7 +137,6 @@ setMethod(
 					xlab = "Posterior probability (+/- std error)",
 					xlim = c(0,1)
 			)
-			
 			## sets 
 			screen(4)
 			plot( x@setsResults$estimate, xlab="Set", ylab="Posterior" )
