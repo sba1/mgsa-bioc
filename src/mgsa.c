@@ -556,8 +556,7 @@ static double get_score(struct context *cn)
 	double score = log(alpha) * cn->n10 + log(1.0-alpha) * cn->n00 + log(1-beta)* cn->n11 + log(beta)*cn->n01;
 
 	/* apply prior */
-	score += p * (cn->number_of_sets - cn->number_of_inactive_sets) + (1.0-p) * cn->number_of_inactive_sets;
-
+	score += log(p) * (cn->number_of_sets - cn->number_of_inactive_sets) + log(1.0-p) * cn->number_of_inactive_sets;
 	return score;
 
 }
