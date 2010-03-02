@@ -34,8 +34,10 @@ mcmcSummary <- function(x){
 }
 
 mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0){
-	## call to core function
-	raw <- mgsa.trampoline(o, sets, n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads)
+	
+	## call to core function on non-empty sets only
+	isempty  <- sapply(sets,length) == 0
+	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads)
 	
 	## wrap raw results into a MgsaResults object
 	res <- new("MgsaMcmcResults")
@@ -48,8 +50,10 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 	res@alphaMcmcPost <- matrix(raw$alpha$counts/steps, ncol=restarts)
 	res@betaMcmcPost <- matrix(raw$beta$counts/steps, ncol=restarts)
 	res@pMcmcPost <- matrix(raw$p$counts/steps, ncol=restarts)
-	res@setsMcmcPost <- matrix(raw$marg, ncol=restarts)
 	
+	## posterior for empty sets is NA
+	res@setsMcmcPost <- matrix(as.numeric(NA), nrow=length(sets), ncol=restarts)
+	res@setsMcmcPost[!isempty,] <- matrix(raw$marg, ncol=restarts)
 	
 	res@alphaPost <- data.frame( value = raw$alpha$breaks, mcmcSummary(res@alphaMcmcPost) )
 	res@betaPost <- data.frame( value = raw$beta$breaks, mcmcSummary(res@betaMcmcPost) )
@@ -98,8 +102,6 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 	encode <- function(x){ match( intersect(x, population), population) }
 	sets <- lapply(sets, encode)
 	o <- encode(o)
-	
-	sets<-subset(sets,lapply(sets,length)>0)
 	
 	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads))
 }

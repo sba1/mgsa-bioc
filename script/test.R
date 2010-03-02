@@ -38,7 +38,9 @@ print(t)
 print(r)
 plot(r)
 
+
 ## integer, list, setting alpha and beta grids
+## Not yet implemented
 cat("mgsa: integer, list, setting alpha and beta grids:\n")
 r <- mgsa(which(o==1), sets, steps=number.of.steps, alpha = 0.01*1:10, beta = 0.01*1:10)
 print(r)
@@ -81,6 +83,12 @@ r <- mgsa(o==1, sets, steps=1e3, restarts=10)
 print(r)
 plot(r)
 
+## integer, list with a few empty sets
+cat("mgsa: integer, list, with an empty set in second position:\n")
+r <- mgsa(which(o==1), c(sets[1], list(integer(0)), sets[-1]), steps=1e3, restarts=10)
+print(r)
+plot(r)
+print(head(r@setsResults))
 
 
 

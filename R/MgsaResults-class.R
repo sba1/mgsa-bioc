@@ -106,7 +106,6 @@ setMethod(
 		}
 )
 
-# TODO: Plot mean
 ######## plot
 setMethod(
 		"plot",
@@ -134,7 +133,7 @@ setMethod(
 					ci.l= sr$estimate - sr$std.error,
 					ci.u = sr$estimate + sr$std.error,
 					horiz = TRUE,
-					xlab = "Posterior probability (+/- std error)",
+					xlab = "Posterior (+/- std error)",
 					xlim = c(0,1)
 			)
 			## sets 
