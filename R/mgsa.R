@@ -43,7 +43,7 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 	if (debug > 0)
 	{
 		print("Raw results:")
-		print(str(raw))	
+		str(raw);	
 	}
 
 	## wrap raw results into a MgsaResults object
