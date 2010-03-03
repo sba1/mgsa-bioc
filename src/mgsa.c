@@ -199,14 +199,22 @@ struct context
 	/** @brief Array, indicating how much sets lead to the activation of a hidden entry */
 	int *hidden_count;
 
+	/** @brief value of fixed alpha */
 	double alpha_fixed;
+
+	/** @brief value of fixed beta */
 	double beta_fixed;
+
+	/** @brief value of fixed p */
 	double p_fixed;
 
+	/* first digit is the observation state, second the hidden state */
 	int n00;
 	int n01;
 	int n10;
 	int n11;
+
+	/* Current parameters, note that these are never accessed directly as they can be overwritten */
 	double alpha;
 	double beta;
 	double p;
@@ -219,11 +227,17 @@ struct context
 	double old_beta;
 	double old_p;
 
-	/* Summary related */
+	/* The remainder is summary related and updated in record_activity() */
 	uint64_t *sets_activity_count;
 	struct summary_for_cont_var *alpha_summary;
 	struct summary_for_cont_var *beta_summary;
 	struct summary_for_cont_var *p_summary;
+
+	/** @brief represents the max log likelihood encountered so far */
+	double max_score;
+
+	/** @brief in which step max_score was recorded */
+	int64_t step_for_max_score;
 };
 
 /**
@@ -287,9 +301,9 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 		goto bailout;
 
 
-	/* Initially, no set is active, hence all observations that are true are false positive... */
+	/* Initially, no set is active, hence all observations that are true are false positives... */
 	cn->n10 = lo;
-	/* while the rest are true negative */
+	/* ...while the rest are true negatives */
 	cn->n00 = n - lo;
 	cn->n01 = cn->n11 = 0;
 
@@ -558,7 +572,6 @@ static double get_score(struct context *cn)
 	/* apply prior */
 	score += log(p) * (cn->number_of_sets - cn->number_of_inactive_sets) + log(1.0-p) * cn->number_of_inactive_sets;
 	return score;
-
 }
 
 /**
@@ -603,6 +616,7 @@ static void propose_state(struct context *cn, struct mt19937p *mt)
 		}
 	} else
 	{
+		/* FIXME: If a parameter is fixed it still is considered here (this wastes steps */
 		double which_param = genrand(mt);
 		if (which_param < (1.0/3.0))
 		{
@@ -639,11 +653,12 @@ static void undo_proposal(struct context *cn)
 }
 
 /**
- * Records the current activity of the sets.
+ * Records the current activity of the sets. Should be called on each step.
  *
  * @param cn
+ * @param score specifies the current score (log)
  */
-static void record_activity(struct context *cn)
+static void record_activity(struct context *cn, int64_t step, double score)
 {
 	int i;
 
@@ -654,14 +669,24 @@ static void record_activity(struct context *cn)
 	add_to_summary(cn->alpha_summary,get_alpha(cn));
 	add_to_summary(cn->beta_summary,get_beta(cn));
 	add_to_summary(cn->p_summary,get_p(cn));
+
+	if (score > cn->max_score)
+	{
+		cn->max_score = score;
+		cn->step_for_max_score = step;
+	}
 }
 
+/* This in essence replicates the summary stuff in context. TODO: unify this */
 struct result
 {
 	double *marg_set_activity;
 	struct summary_for_cont_var *alpha_summary;
 	struct summary_for_cont_var *beta_summary;
 	struct summary_for_cont_var *p_summary;
+
+	double max_score;
+	int64_t step_for_max_score;
 };
 
 /**
@@ -752,7 +777,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 			neighborhood_size = new_neighborhood_size;
 		}
 
-		record_activity(&cn);
+		record_activity(&cn, step, score);
 	}
 
 #ifdef DEBUG
@@ -775,7 +800,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	res.alpha_summary = cn.alpha_summary;
 	res.beta_summary = cn.beta_summary;
 	res.p_summary = cn.p_summary;
-
+	res.max_score = cn.max_score;
+	res.step_for_max_score = cn.step_for_max_score;
 bailout:
 	return res;
 }
@@ -908,8 +934,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 		have_margs = have_alphas = have_betas = have_ps = 0;
 
-		PROTECT(res = allocVector(VECSXP,4));
-		PROTECT(names = allocVector(STRSXP,4));
+		/* TODO: The size is not really fixed */
+		PROTECT(res = allocVector(VECSXP,5));
+		PROTECT(names = allocVector(STRSXP,5));
 
 		GetRNGstate();
 
@@ -1021,6 +1048,21 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 			SET_VECTOR_ELT(res,3,p);
 			SET_STRING_ELT(names,3,mkChar("p"));
+
+			UNPROTECT(1);
+		}
+
+		/* Store max scores for each run */
+		{
+			SEXP max_score;
+
+			PROTECT(max_score = allocVector(REALSXP,irestarts));
+
+			for (run=0;run<irestarts;run++)
+				REAL(max_score)[run] = r[run].max_score;
+
+			SET_VECTOR_ELT(res,4,max_score);
+			SET_STRING_ELT(names,4,mkChar("max.score"));
 
 			UNPROTECT(1);
 		}
