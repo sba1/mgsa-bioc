@@ -237,7 +237,11 @@ struct context
 	double max_score;
 
 	/** @brief in which step max_score was recorded */
-	int64_t step_for_max_score;
+	int64_t max_score_step;
+
+	double max_score_alpha;
+	double max_score_beta;
+	double max_score_p;
 };
 
 /**
@@ -675,7 +679,10 @@ static void record_activity(struct context *cn, int64_t step, double score)
 	if (score > cn->max_score)
 	{
 		cn->max_score = score;
-		cn->step_for_max_score = step;
+		cn->max_score_step = step;
+		cn->max_score_alpha = get_alpha(cn);
+		cn->max_score_beta = get_beta(cn);
+		cn->max_score_p = get_p(cn);
 	}
 }
 
@@ -688,7 +695,9 @@ struct result
 	struct summary_for_cont_var *p_summary;
 
 	double max_score;
-	int64_t step_for_max_score;
+	double max_score_alpha;
+	double max_score_beta;
+	double max_score_p;
 };
 
 /**
@@ -803,7 +812,9 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	res.beta_summary = cn.beta_summary;
 	res.p_summary = cn.p_summary;
 	res.max_score = cn.max_score;
-	res.step_for_max_score = cn.step_for_max_score;
+	res.max_score_alpha = cn.max_score_alpha;
+	res.max_score_beta = cn.max_score_beta;
+	res.max_score_p = cn.max_score_p;
 bailout:
 	return res;
 }
@@ -1054,17 +1065,46 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 			UNPROTECT(1);
 		}
 
-		/* Store max scores for each run */
+		/* Store max stuff for each run (TODO: Add names) */
 		{
-			SEXP max_score;
+			SEXP max;
 
-			PROTECT(max_score = allocVector(REALSXP,irestarts));
+			PROTECT(max = allocVector(VECSXP,irestarts));
 
 			for (run=0;run<irestarts;run++)
-				REAL(max_score)[run] = r[run].max_score;
+			{
+				SEXP max_run;
+				SEXP el;
 
-			SET_VECTOR_ELT(res,4,max_score);
-			SET_STRING_ELT(names,4,mkChar("max.score"));
+				PROTECT(max_run = allocVector(VECSXP, 4));
+
+				PROTECT(el = allocVector(REALSXP,1));
+				REAL(el)[0] = r[run].max_score;
+				SET_VECTOR_ELT(max_run,0,el);
+				UNPROTECT(1);
+
+				PROTECT(el = allocVector(REALSXP,1));
+				REAL(el)[0] = r[run].max_score_alpha;
+				SET_VECTOR_ELT(max_run,1,el);
+				UNPROTECT(1);
+
+				PROTECT(el = allocVector(REALSXP,1));
+				REAL(el)[0] = r[run].max_score_beta;
+				SET_VECTOR_ELT(max_run,2,el);
+				UNPROTECT(1);
+
+				PROTECT(el = allocVector(REALSXP,1));
+				REAL(el)[0] = r[run].max_score_p;
+				SET_VECTOR_ELT(max_run,3,el);
+				UNPROTECT(1);
+
+				SET_VECTOR_ELT(max,run,max_run);
+
+				UNPROTECT(1);
+			}
+
+			SET_VECTOR_ELT(res,4,max);
+			SET_STRING_ELT(names,4,mkChar("max"));
 
 			UNPROTECT(1);
 		}
