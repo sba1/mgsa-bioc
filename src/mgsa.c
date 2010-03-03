@@ -311,6 +311,8 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 	cn->beta = 0.25;
 	cn->p = 1.0 / number_of_sets;
 
+	cn->max_score = -DBL_MAX;
+
 	return 1;
 
 bailout:
