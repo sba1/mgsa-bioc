@@ -109,7 +109,12 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 	encode <- function(x){ match( intersect(x, population), population) }
 	sets <- lapply(sets, encode)
 	o <- encode(o)
-	
+
+	if (debug)
+	{
+		cat(paste("number of sets:",length(sets),"\n"))
+	}
+
 	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads,debug))
 }
 
@@ -186,7 +191,7 @@ if (F) # "topGO" %in% installed.packages()[,1])
 setMethod(
 		"mgsa",
 		signature = c(o="character", sets="MgsaMapping"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads, debug) {
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need

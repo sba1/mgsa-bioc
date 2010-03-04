@@ -62,6 +62,123 @@ void *ts_R_alloc(size_t n, int size)
 /** Redirect R_alloc. I know, this is ugly... */
 #define R_alloc ts_R_alloc
 
+
+/*************************************************************/
+
+/**
+ * Represents a prior for parameter. Very simple at the moment.
+ */
+struct parameter_prior
+{
+	/** @brief is this prior uniform continuous? (otherwise it is uniform discrete) */
+	int uniform_continuous;
+	double uniform_continous_lower;
+	double uniform_continous_upper;
+
+	/** @brief discrete values */
+	double *values;
+
+	int number_of_values;
+};
+
+
+/**
+ * Create a C representation of the parameter range from the
+ * R specification.
+ *
+ * Uses R_alloc(), so R frees memory after C code has been returned.
+ *
+ * @param sexp
+ * @return
+ */
+static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp)
+{
+	struct parameter_prior *p;
+
+	if (!(p = R_alloc(1,sizeof(*p))))
+		return NULL;
+
+	if (LENGTH(sexp) == 0)
+	{
+		p->uniform_continuous = 1;
+		p->uniform_continous_lower = 0.0;
+		p->uniform_continous_upper = 1.0;
+	} else
+	{
+		int i;
+
+		p->uniform_continuous = 0;
+		p->number_of_values = LENGTH(sexp);
+
+		if (!(p->values = R_alloc(p->number_of_values,sizeof(p->values[0]))))
+			return NULL;
+
+		PROTECT(sexp = AS_NUMERIC(sexp));
+
+		for (i=0;i<p->number_of_values;i++)
+			p->values[i] = REAL(sexp)[i];
+
+		UNPROTECT(1);
+	}
+
+	return p;
+}
+
+/**
+ * Represents a basic sample. Only useful in conjunction with a parameter_prior structure.
+ * Can be assigned.
+ */
+struct prior_sample
+{
+	union
+	{
+		int discrete_index;
+		double continuous_value;
+	} u;
+};
+
+/**
+ * Samples from the given parameter prior.
+ *
+ * @param sample holds the sample
+ * @param prior
+ * @param mt
+ *
+ * @returns an opaque sample
+ */
+static void parameter_prior_sample(struct prior_sample *sample, struct parameter_prior *prior, struct mt19937p *mt)
+{
+	double rnd = genrand(mt);
+
+	/* TODO: Add support for scaling in the continuous case */
+	if (prior->uniform_continuous)
+		sample->u.continuous_value = rnd;
+	else
+	{
+		sample->u.discrete_index = rnd * prior->number_of_values;
+		sample->u.discrete_index %= prior->number_of_values;
+
+	}
+
+}
+
+/**
+ * Returns the real value represented by the sample.
+ *
+ * @param sample
+ * @param prior
+ * @return
+ */
+static double get_prior_sample_value(struct prior_sample *sample, struct parameter_prior *prior)
+{
+	if (prior->uniform_continuous)
+		return sample->u.continuous_value;
+	return	prior->values[sample->u.discrete_index];
+}
+
+
+/*************************************************************/
+
 struct summary_for_cont_var
 {
 	double min;
@@ -71,7 +188,7 @@ struct summary_for_cont_var
 };
 
 /**
- * Creates the structure needed to summarize a continuous variable.
+ * Creates the structure needed to summarize a uniform_continuous variable.
  *
  * @param min
  * @param max
@@ -199,14 +316,14 @@ struct context
 	/** @brief Array, indicating how much sets lead to the activation of a hidden entry */
 	int *hidden_count;
 
-	/** @brief value of fixed alpha */
-	double alpha_fixed;
+	/** @brief prior for alpha */
+	struct parameter_prior *alpha_prior;
 
-	/** @brief value of fixed beta */
-	double beta_fixed;
+	/** @brief prior for beta */
+	struct parameter_prior *beta_prior;
 
-	/** @brief value of fixed p */
-	double p_fixed;
+	/** @brief prior for p */
+	struct parameter_prior *p_prior;
 
 	/* first digit is the observation state, second the hidden state */
 	int n00;
@@ -214,18 +331,20 @@ struct context
 	int n10;
 	int n11;
 
-	/* Current parameters, note that these are never accessed directly as they can be overwritten */
-	double alpha;
-	double beta;
-	double p;
+	/* The current parameters */
+	struct prior_sample alpha;
+	struct prior_sample beta;
+	struct prior_sample p;
 
-	/* Proposal related */
+	/* Proposal related, used to undo proposal */
 	int proposal_toggle;
 	int proposal_s1;
 	int proposal_s2;
-	double old_alpha;
-	double old_beta;
-	double old_p;
+
+	int proposal_which_parameter_changed; /**! @brief defines which parameter (0-2) has been changed */
+	struct prior_sample old_alpha; /* In theory, we would need only one old parameter sample (at the moment we can only change one parameter) */
+	struct prior_sample old_beta;
+	struct prior_sample old_p;
 
 	/* The remainder is summary related and updated in record_activity() */
 	uint64_t *sets_activity_count;
@@ -310,10 +429,6 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 	/* ...while the rest are true negatives */
 	cn->n00 = n - lo;
 	cn->n01 = cn->n11 = 0;
-
-	cn->alpha = 0.10;
-	cn->beta = 0.25;
-	cn->p = 1.0 / number_of_sets;
 
 	cn->max_score = -DBL_MAX;
 
@@ -518,9 +633,7 @@ static void toggle_state(struct context *cn, int to_switch)
  */
 static double get_alpha(struct context *cn)
 {
-	if (cn->alpha_fixed > 0.0 && cn->alpha_fixed < 1)
-		return cn->alpha_fixed;
-	return cn->alpha;
+	return get_prior_sample_value(&cn->alpha,cn->alpha_prior);
 }
 
 /**
@@ -531,9 +644,7 @@ static double get_alpha(struct context *cn)
  */
 static double get_beta(struct context *cn)
 {
-	if (cn->beta_fixed > 0.0 && cn->beta_fixed < 1)
-		return cn->beta_fixed;
-	return cn->beta;
+	return get_prior_sample_value(&cn->beta,cn->beta_prior);
 }
 
 /**
@@ -544,9 +655,7 @@ static double get_beta(struct context *cn)
  */
 static double get_p(struct context *cn)
 {
-	if (cn->p_fixed > 0.0 && cn->p_fixed < 1)
-		return cn->p_fixed;
-	return cn->p;
+	return get_prior_sample_value(&cn->p,cn->p_prior);
 }
 
 /**
@@ -591,9 +700,6 @@ static void propose_state(struct context *cn, struct mt19937p *mt)
 	cn->proposal_toggle = -1;
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
-	cn->old_alpha = -1;
-	cn->old_beta = -1;
-	cn->old_p = -1;
 
 	if (genrand(mt) < 0.5)
 	{
@@ -622,20 +728,23 @@ static void propose_state(struct context *cn, struct mt19937p *mt)
 		}
 	} else
 	{
-		/* FIXME: If a parameter is fixed it still is considered here (this wastes steps */
+		/* FIXME: If a parameter is fixed it still is considered here (this wastes steps) */
 		double which_param = genrand(mt);
 		if (which_param < (1.0/3.0))
 		{
 			cn->old_alpha = cn->alpha;
-			cn->alpha = genrand(mt);
+			parameter_prior_sample(&cn->alpha,cn->alpha_prior, mt);
+			cn->proposal_which_parameter_changed = 0;
 		} else if (which_param < (2.0/3.0))
 		{
 			cn->old_beta = cn->beta;
-			cn->beta = genrand(mt);
+			parameter_prior_sample(&cn->beta,cn->beta_prior, mt);
+			cn->proposal_which_parameter_changed = 1;
 		} else
 		{
 			cn->old_p = cn->p;
-			cn->p = genrand(mt) / 8; /* FIXME: */
+			parameter_prior_sample(&cn->p,cn->p_prior, mt);
+			cn->proposal_which_parameter_changed = 2;
 		}
 	}
 }
@@ -648,14 +757,19 @@ static void propose_state(struct context *cn, struct mt19937p *mt)
 static void undo_proposal(struct context *cn)
 {
 	if (cn->proposal_toggle != -1) toggle_state(cn,cn->proposal_toggle);
-	if (cn->proposal_s1 != -1)
+	else if (cn->proposal_s1 != -1)
 	{
 		toggle_state(cn,cn->proposal_s1);
 		toggle_state(cn,cn->proposal_s2);
+	} else
+	{
+		switch (cn->proposal_which_parameter_changed)
+		{
+			case	0: cn->alpha = cn->old_alpha; break;
+			case	1: cn->beta = cn->old_beta; break;
+			default: cn->p = cn->old_p; break;
+		}
 	}
-	if (cn->old_alpha >= 0.0) cn->alpha = cn->old_alpha;
-	if (cn->old_beta >= 0.0) cn->beta = cn->old_beta;
-	if (cn->old_p >= 0.0) cn->p = cn->old_p;
 }
 
 /**
@@ -710,9 +824,12 @@ struct result
  * @param o indices of entities which are "on" (0 based).
  * @param lo length of o
  * @param number_of_steps defines the number of mcmc steps to be performed
+ * @param alpha
+ * @param beta
+ * @param p
  * @param mt pre-seeded structure used for random number generation.
  */
-static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, double alpha, double beta, double p, struct mt19937p *mt)
+static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, struct parameter_prior *alpha_prior, struct parameter_prior *beta_prior, struct parameter_prior *p_prior, struct mt19937p *mt)
 {
 	int i;
 	int64_t step;
@@ -747,9 +864,22 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
 		goto bailout;
 
-	cn.alpha_fixed = alpha;
-	cn.beta_fixed = beta;
-	cn.p_fixed = p;
+	cn.alpha_prior = alpha_prior;
+	cn.beta_prior = beta_prior;
+	cn.p_prior = p_prior;
+
+	/* Sample initial state */
+	parameter_prior_sample(&cn.alpha,cn.alpha_prior, mt);
+	parameter_prior_sample(&cn.beta,cn.beta_prior, mt);
+	parameter_prior_sample(&cn.p,cn.p_prior, mt);
+
+	get_prior_sample_value(&cn.alpha	,cn.alpha_prior);
+	get_prior_sample_value(&cn.beta		,cn.beta_prior);
+	get_prior_sample_value(&cn.p		,cn.p_prior);
+
+//	cn.alpha_fixed = alpha;
+//	cn.beta_fixed = beta;
+//	cn.p_fixed = p;
 
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
@@ -842,6 +972,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	int *xo,*no,lo;
 	int **nsets, *lset, lsets;
 	int i,j;
+	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 
 	/* Clear interruption flag */
 	is_interrupted = 0;
@@ -867,9 +998,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
 	PROTECT(steps = AS_INTEGER(steps));
-	PROTECT(alpha = AS_NUMERIC(alpha));
-	PROTECT(beta = AS_NUMERIC(beta));
-	PROTECT(p = AS_NUMERIC(p));
+//	PROTECT(alpha = AS_NUMERIC(alpha));
+//	PROTECT(beta = AS_NUMERIC(beta));
+//	PROTECT(p = AS_NUMERIC(p));
 	PROTECT(restarts = AS_INTEGER(restarts));
 	PROTECT(threads = AS_INTEGER(threads));
 
@@ -931,6 +1062,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		UNPROTECT(1);
 	}
 
+	if (!(alpha_prior = create_parameter_prior_from_R(alpha)))
+		goto bailout;
+	if (!(beta_prior = create_parameter_prior_from_R(beta)))
+		goto bailout;
+	if (!(p_prior = create_parameter_prior_from_R(p)))
+		goto bailout;
+
 	/* Create the result */
 	{
 		struct result *r;
@@ -977,7 +1115,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 			sgenrand(seed, &mt);
 
-			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),DOUBLE_DATA(alpha)[0],DOUBLE_DATA(beta)[0],DOUBLE_DATA(p)[0], &mt);
+			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),alpha_prior,beta_prior,p_prior, &mt);
 
 			if (r[run].marg_set_activity) have_margs = 1;
 			if (r[run].alpha_summary) have_alphas = 1;
@@ -1114,7 +1252,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	}
 
 bailout:
-	UNPROTECT(9);
+	UNPROTECT(6);
 	return res;
 }
 
