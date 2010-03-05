@@ -970,9 +970,8 @@ bailout:
 	return res;
 }
 
-
 /**
- * Interrupt handler. Simply sets gloabl is_interrupted flag.
+ * Interrupt handler. Simply sets global is_interrupted flag.
  *
  * @param sig
  */
@@ -983,14 +982,23 @@ static void signal_handler(int sig)
 }
 
 /**
- * @param n the number of observable entities.
- * @param o (1 based)
  *
- * @note TODO: Check whether sets are real sets.
+ * @param sets (1 based)
+ * @param n the number of observable entities.
+ * @param o (1 based, just the indices)
+ * @param alpha
+ * @param beta
+ * @param p
+ * @param steps
+ * @param restarts
+ * @param threads
+ * @param as (1 based, just indices as o, not that the shape for the return will change in that case).
+ * @return
  */
-SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP steps, SEXP restarts, SEXP threads)
+SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
 	int *xo,*no,lo;
+	int *nas = NULL, las;
 	int **nsets, *lset, lsets;
 	int i,j;
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
@@ -1019,11 +1027,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
 	PROTECT(steps = AS_INTEGER(steps));
-//	PROTECT(alpha = AS_NUMERIC(alpha));
-//	PROTECT(beta = AS_NUMERIC(beta));
-//	PROTECT(p = AS_NUMERIC(p));
 	PROTECT(restarts = AS_INTEGER(restarts));
 	PROTECT(threads = AS_INTEGER(threads));
+	PROTECT(as = AS_INTEGER(as));
 
 	if (INTEGER_VALUE(restarts) < 1)
 	{
@@ -1083,6 +1089,24 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 		UNPROTECT(1);
 	}
 
+	/* Convert active sets */
+	las = LENGTH(as);
+	if (las > 0)
+	{
+		nas = R_alloc(las,sizeof(nas[0]));
+
+		for (i=0;i<las;i++)
+		{
+			nas[i] =  INTEGER_POINTER(as)[i] - 1;
+			if (nas[i] >= lsets)
+			{
+				error("Parameter 'as' refers to a non-existing set.");
+				goto bailout;
+			}
+		}
+	}
+
+
 	if (!(alpha_prior = create_parameter_prior_from_R(alpha)))
 		goto bailout;
 	if (!(beta_prior = create_parameter_prior_from_R(beta)))
@@ -1090,8 +1114,72 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	if (!(p_prior = create_parameter_prior_from_R(p)))
 		goto bailout;
 
-	/* Create the result */
+	if (nas)
 	{
+		/* Mode 1: Just calculate the score */
+		struct context cn;
+		double score;
+		int i;
+
+		if (!alpha_prior->uniform_continuous && alpha_prior->number_of_values != 1)
+		{
+			error("Parameter 'alpha' needs to be atomic if 'as' is given.");
+			goto bailout;
+		}
+
+		if (!beta_prior->uniform_continuous && beta_prior->number_of_values != 1)
+		{
+			error("Parameter 'beta' needs to be atomic if 'as' is given.");
+			goto bailout;
+		}
+
+		if (!p_prior->uniform_continuous && p_prior->number_of_values != 1)
+		{
+			error("Parameter 'p' needs to be atomic if 'as' is given.");
+			goto bailout;
+		}
+
+		if (!init_context(&cn,nsets,lset,lsets,INTEGER_VALUE(n),no,lo))
+			goto bailout;
+
+		cn.alpha_prior = alpha_prior;
+		cn.beta_prior = beta_prior;
+		cn.p_prior = p_prior;
+
+		/* This simply assigns the user-desired parameter */
+		cn.alpha.u.discrete_index = 0;
+		cn.beta.u.discrete_index = 0;
+		cn.p.u.discrete_index = 0;
+
+		if (alpha_prior->uniform_continuous)
+		{
+			error("Parameter 'alpha' needs to be specified!");
+			goto bailout;
+		}
+
+		if (beta_prior->uniform_continuous)
+		{
+			error("Parameter 'beta' needs to be specified!");
+			goto bailout;
+		}
+
+		if (p_prior->uniform_continuous)
+		{
+			error("Parameter 'p' needs to be specified!");
+			goto bailout;
+		}
+
+		for (i=0;i<las;i++)
+			add_set(&cn,nas[i]);
+
+		score = get_score(&cn);
+
+		PROTECT(res = allocVector(REALSXP,1));
+		REAL(res)[0] = score;
+		UNPROTECT(1);
+	} else
+	{
+		/* Mode 2: Perform MCMC. Here, we organize the creation of the result frame and the threading */
 		struct result *r;
 		int run;
 		int have_margs, have_alphas, have_betas, have_ps;
@@ -1136,6 +1224,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 			sgenrand(seed, &mt);
 
+			/* Run! */
 			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),alpha_prior,beta_prior,p_prior, &mt);
 
 			if (r[run].marg_set_activity) have_margs = 1;
@@ -1288,7 +1377,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 	}
 
 bailout:
-	UNPROTECT(6);
+	UNPROTECT(7);
 	return res;
 }
 

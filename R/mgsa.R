@@ -1,8 +1,8 @@
 #'
 #' Trampoline to jump into the fast C implementation.
 #'
-mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0 ){
-	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps, restarts, threads)
+mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps, restarts, threads, as)
 	return (res)
 }
 
@@ -34,11 +34,17 @@ mcmcSummary <- function(x){
 	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
 }
 
-mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, debug=0){
+mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
-	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads)
+	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads, as)
+	
+	# just return the score (this function is quite overloaded now..., perhaps it would be better to make a separate function)
+	if (length(as) > 0)
+	{
+		return(raw)
+	}
 	
 	if (debug > 0)
 	{
@@ -87,9 +93,10 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 #' @param steps number of MCMC steps to be performed
 #' @param restarts defines the number of restarts.
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
-#'        corresponds to the number of available cores. 
+#'        corresponds to the number of available cores.
+#' @param as define the active sets. No MCMC is run in this case. Just the log likelihood is returned.  
 #' 
-mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, debug=0){
+mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
@@ -115,14 +122,14 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 		cat(paste("number of sets:",length(sets),"\n"))
 	}
 
-	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads,debug))
+	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads,as,debug))
 }
 
 
 ## S4 implementation: generic declaration
 setGeneric(
 		"mgsa",
-		function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, debug=0){
+		function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0,  as=integer(0), debug=0){
 			standardGeneric("mgsa")
 		}
 )
@@ -131,9 +138,9 @@ setGeneric(
 setMethod(
 		"mgsa",
 		signature = c(o="integer", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, debug)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		}
 )
 
@@ -141,9 +148,9 @@ setMethod(
 setMethod(
 		"mgsa",
 		signature = c(o="numeric", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, debug)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		}
 )
 
@@ -151,9 +158,9 @@ setMethod(
 setMethod(
 		"mgsa",
 		signature = c(o="character", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, debug)
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		}
 )
 
@@ -161,9 +168,9 @@ setMethod(
 setMethod(
 		"mgsa",
 		signature = c(o="logical", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, debug) {
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
 			if (is.null(population)) population <- 1:length(o)
-			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads, debug )
+			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads, as, debug )
 		}
 )
 
@@ -191,17 +198,17 @@ if (F) # "topGO" %in% installed.packages()[,1])
 setMethod(
 		"mgsa",
 		signature = c(o="character", sets="MgsaMapping"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, debug) {
+		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads, debug))
+				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads, as, debug))
 			}
 			else
 			{
 				population<-getItemsIndices(sets,population)
-				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads, debug))
+				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads, as, debug))
 			}
 		}
 )
