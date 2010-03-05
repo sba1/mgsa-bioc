@@ -372,6 +372,8 @@ struct context
 	double max_score_alpha;
 	double max_score_beta;
 	double max_score_p;
+	int *max_score_sets_active;
+	int max_score_sets_active_length;
 };
 
 /**
@@ -423,6 +425,9 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
 
+	if (!(cn->max_score_sets_active = (int*)R_alloc(number_of_sets,sizeof(cn->max_score_sets_active[0]))))
+		goto bailout;
+
 	/* Summary related */
 	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
@@ -442,6 +447,7 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 	cn->n01 = cn->n11 = 0;
 
 	cn->max_score = -DBL_MAX;
+	cn->max_score_sets_active_length = 0;
 
 	return 1;
 
@@ -793,9 +799,9 @@ static void undo_proposal(struct context *cn)
  */
 static void record_activity(struct context *cn, int64_t step, double score)
 {
-	int i;
+	int i,j;
 
-	/* Remember that sets that are active are stored in the  partition */
+	/* Remember that sets that are active are stored in the second partition */
 	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		cn->sets_activity_count[cn->set_partition[i]]++;
 
@@ -805,11 +811,16 @@ static void record_activity(struct context *cn, int64_t step, double score)
 
 	if (score > cn->max_score)
 	{
+		/* Remember the score and the configuration */
 		cn->max_score = score;
 		cn->max_score_step = step;
 		cn->max_score_alpha = get_alpha(cn);
 		cn->max_score_beta = get_beta(cn);
 		cn->max_score_p = get_p(cn);
+
+		for (i=cn->number_of_inactive_sets,j=0;i<cn->number_of_sets;i++,j++)
+			cn->max_score_sets_active[j] = cn->set_partition[i];
+		cn->max_score_sets_active_length = cn->number_of_sets - cn->number_of_inactive_sets;
 	}
 }
 
@@ -825,6 +836,8 @@ struct result
 	double max_score_alpha;
 	double max_score_beta;
 	double max_score_p;
+	int *max_score_sets_active;
+	int max_score_sets_active_length;
 };
 
 /**
@@ -882,17 +895,9 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	cn.p_prior = p_prior;
 
 	/* Sample initial state */
-	parameter_prior_sample(&cn.alpha,cn.alpha_prior, mt);
-	parameter_prior_sample(&cn.beta,cn.beta_prior, mt);
-	parameter_prior_sample(&cn.p,cn.p_prior, mt);
-
-	get_prior_sample_value(&cn.alpha	,cn.alpha_prior);
-	get_prior_sample_value(&cn.beta		,cn.beta_prior);
-	get_prior_sample_value(&cn.p		,cn.p_prior);
-
-//	cn.alpha_fixed = alpha;
-//	cn.beta_fixed = beta;
-//	cn.p_fixed = p;
+	parameter_prior_sample(&cn.alpha,	cn.alpha_prior, mt);
+	parameter_prior_sample(&cn.beta,	cn.beta_prior, mt);
+	parameter_prior_sample(&cn.p,		cn.p_prior, mt);
 
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
@@ -951,6 +956,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	for (i=0;i<cn.number_of_sets;i++)
 		res.marg_set_activity[i] = (double)cn.sets_activity_count[i] / (double)number_of_steps;
 
+	/* Note, we are using here stuff that is allocated in init_context() */
 	res.alpha_summary = cn.alpha_summary;
 	res.beta_summary = cn.beta_summary;
 	res.p_summary = cn.p_summary;
@@ -958,6 +964,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	res.max_score_alpha = cn.max_score_alpha;
 	res.max_score_beta = cn.max_score_beta;
 	res.max_score_p = cn.max_score_p;
+	res.max_score_sets_active = cn.max_score_sets_active;
+	res.max_score_sets_active_length = cn.max_score_sets_active_length;
 bailout:
 	return res;
 }
@@ -1224,31 +1232,46 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP st
 
 			for (run=0;run<irestarts;run++)
 			{
-				SEXP max_run;
+				SEXP max_run, max_run_names;
 				SEXP el;
 
-				PROTECT(max_run = allocVector(VECSXP, 4));
+				int o;
+
+				PROTECT(max_run = allocVector(VECSXP, 5));
+				PROTECT(max_run_names = allocVector(STRSXP,5));
 
 				PROTECT(el = allocVector(REALSXP,1));
 				REAL(el)[0] = r[run].max_score;
 				SET_VECTOR_ELT(max_run,0,el);
+				SET_STRING_ELT(max_run_names,0,mkChar("score"));
 				UNPROTECT(1);
 
 				PROTECT(el = allocVector(REALSXP,1));
 				REAL(el)[0] = r[run].max_score_alpha;
 				SET_VECTOR_ELT(max_run,1,el);
+				SET_STRING_ELT(max_run_names,1,mkChar("alpha"));
 				UNPROTECT(1);
 
 				PROTECT(el = allocVector(REALSXP,1));
 				REAL(el)[0] = r[run].max_score_beta;
 				SET_VECTOR_ELT(max_run,2,el);
+				SET_STRING_ELT(max_run_names,2,mkChar("beta"));
 				UNPROTECT(1);
 
 				PROTECT(el = allocVector(REALSXP,1));
 				REAL(el)[0] = r[run].max_score_p;
 				SET_VECTOR_ELT(max_run,3,el);
+				SET_STRING_ELT(max_run_names,3,mkChar("p"));
 				UNPROTECT(1);
 
+				PROTECT(el = allocVector(REALSXP,r[run].max_score_sets_active_length));
+				for (o=0;o<r[run].max_score_sets_active_length;o++)
+					REAL(el)[o] = r[run].max_score_sets_active[o] + 1; /* Don't forget to add one, as R starts from one */
+				SET_VECTOR_ELT(max_run,4,el);
+				SET_STRING_ELT(max_run_names,4,mkChar("sets"));
+				UNPROTECT(1);
+
+				setAttrib(max_run,R_NamesSymbol,max_run_names);
 				SET_VECTOR_ELT(max,run,max_run);
 
 				UNPROTECT(1);
