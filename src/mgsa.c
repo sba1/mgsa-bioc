@@ -15,6 +15,8 @@
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
 
+/*#define DEBUG*/
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -98,7 +100,9 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp)
 	if (!(p = R_alloc(1,sizeof(*p))))
 		return NULL;
 
-	if (LENGTH(sexp) == 0)
+	p->number_of_values = LENGTH(sexp);
+
+	if (p->number_of_values == 0)
 	{
 		p->uniform_continuous = 1;
 		p->uniform_continous_lower = 0.0;
@@ -107,16 +111,23 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp)
 	{
 		int i;
 
-		p->uniform_continuous = 0;
-		p->number_of_values = LENGTH(sexp);
-
-		if (!(p->values = R_alloc(p->number_of_values,sizeof(p->values[0]))))
-			return NULL;
-
 		PROTECT(sexp = AS_NUMERIC(sexp));
 
-		for (i=0;i<p->number_of_values;i++)
-			p->values[i] = REAL(sexp)[i];
+		if (p->number_of_values == 1 &&  ISNAN(REAL(sexp)[0]))
+		{
+			p->uniform_continuous = 1;
+			p->uniform_continous_lower = 0.0;
+			p->uniform_continous_upper = 1.0;
+		} else
+		{
+			p->uniform_continuous = 0;
+
+			if (!(p->values = R_alloc(p->number_of_values,sizeof(p->values[0]))))
+				return NULL;
+
+			for (i=0;i<p->number_of_values;i++)
+				p->values[i] = REAL(sexp)[i];
+		}
 
 		UNPROTECT(1);
 	}
@@ -521,7 +532,7 @@ static void add_set(struct context *cn, int to_add)
 		cn->position_of_set_in_partition[to_add] = cn->number_of_inactive_sets;
 	}
 
-#ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 	{
 		printf("Add of %d produced following sets to be inactive:\n",to_add);
 		if (cn->number_of_inactive_sets == 0)
@@ -584,6 +595,7 @@ static void remove_set(struct context *cn, int to_remove)
 	cn->number_of_inactive_sets++;
 
 #ifdef DEBUG
+#ifdef DEBUG_VERBOSE
 	{
 		printf("Remove of %d produced following sets to be inactive:\n",to_remove);
 		if (cn->number_of_inactive_sets == 0)
@@ -603,6 +615,7 @@ static void remove_set(struct context *cn, int to_remove)
 		}
 
 	}
+#endif
 #endif
 
 }
@@ -857,7 +870,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		printf(" o[%d]=%d\n",i,o[i]);
 	}
 
-	printf(" alpha=%g beta=%g p=%g\n",alpha,beta,p);
+	printf(" p=%d p=%d p=%d\n",alpha_prior->uniform_continuous,beta_prior->uniform_continuous,p_prior->uniform_continuous);
 #endif
 	memset(&res,0,sizeof(res));
 
