@@ -989,13 +989,14 @@ static void signal_handler(int sig)
  * @param alpha
  * @param beta
  * @param p
+ * @param type_of_prior
  * @param steps
  * @param restarts
  * @param threads
  * @param as (1 based, just indices as o, not that the shape for the return will change in that case).
  * @return
  */
-SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP steps, SEXP restarts, SEXP threads, SEXP as)
+SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP type_of_prior, SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
 	int *xo,*no,lo;
 	int *nas = NULL, las;
@@ -1413,7 +1414,7 @@ SEXP mgsa_test(void)
 
 
 R_CallMethodDef callMethods[] = {
-   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 9},
+   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 10},
    {"mgsa_test", (DL_FUNC)&mgsa_test, 0},
    {NULL, NULL, 0}
 };

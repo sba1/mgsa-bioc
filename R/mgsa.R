@@ -2,7 +2,7 @@
 #' Trampoline to jump into the fast C implementation.
 #'
 mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
-	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, steps, restarts, threads, as)
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, NA, p, steps, restarts, threads, as)
 	return (res)
 }
 
