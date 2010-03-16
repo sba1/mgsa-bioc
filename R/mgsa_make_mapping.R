@@ -42,6 +42,7 @@ mgsa.make.go.mapping<-function(go.ids,items)
 	# Cleanup
 	dbGetQuery(annotation.con, "DETACH goDB" )
 	dbDisconnect(annotation.con)
+	unlink(annotation.file)
 
 	# Map to unique gene ids
 	all.items<-factor(all$items)
