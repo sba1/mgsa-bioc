@@ -15,7 +15,13 @@ setClass(
 							itemName2ItemIndex = "integer",
 
 							# total number of items 
-							numberOfItems = "integer"
+							numberOfItems = "integer",
+
+							# Same order as sets
+							setAnnotations = "data.frame",
+			
+							# Rows are orderd according to item indices and contains the item annotations
+							itemAnnotations = "data.frame"
 			)
 )
 #' Initialization
@@ -56,6 +62,11 @@ setMethod("initialize", "MgsaSets",
 									# Assign
 									.Object@sets <- sets
 									.Object@itemName2ItemIndex<-itemName2ItemIndex
+
+									if (length(.Object@itemAnnotations)==0)
+									{
+										.Object@itemAnnotations<-data.frame(row.names=names(itemName2ItemIndex))
+									}
 								}
 							}
 							
@@ -63,6 +74,26 @@ setMethod("initialize", "MgsaSets",
 							{
 								.Object@numberOfItems <- max(.Object@itemName2ItemIndex)
 							}
+						}
+						
+						if (any(.Object@itemName2ItemIndex != 1:.Object@numberOfItems))
+						{
+							stop("Provided itemName2ItemIndex should be equal to 1:numberOfItems for now.");
+						}
+
+						if (any(duplicated(names(.Object@itemName2ItemIndex))))
+						{
+							stop("itemName2ItemIndex should not contain duplicated names.");
+						}
+
+						if (length(.Object@setAnnotations)==0)
+						{
+							.Object@setAnnotations<-data.frame(row.names=names(.Object@sets))
+						}
+
+						if (length(.Object@itemAnnotations)==0)
+						{
+							.Object@itemAnnotations<-data.frame(row.names=names(itemName2ItemIndex))
 						}
 						
 						.Object
@@ -79,6 +110,42 @@ setMethod(
 		function(sets) new("MgsaSets",sets=sets)
 )
 
+#'
+#' Returns the items' annotations
+#'
+
+setGeneric( "getItemAnnotations", function(sets,items) standardGeneric( "getItemAnnotations" ) )
+
+setMethod(
+		"getItemAnnotations",
+		signature( "MgsaSets", "missing" ),
+		function( sets, items ) sets@itemAnnotations
+)
+
+setMethod(
+		"getItemAnnotations",
+		signature( "MgsaSets","character" ),
+		function( sets, items ) sets@itemAnnotations[sets@itemName2ItemIndex[items],]
+)
+
+#'
+#' Returns the set annotations
+#'
+
+setGeneric( "getSetAnnotations", function(sets,names) standardGeneric( "getSetAnnotations" ) )
+
+setMethod(
+		"getSetAnnotations",
+		signature( "MgsaSets", "missing" ),
+		function( sets, names ) sets@setAnnotations
+)
+
+setMethod(
+		"getSetAnnotations",
+		signature( "MgsaSets", "character" ),
+		function( sets, names ) sets@setAnnotations[names,]
+)
+
 
 #'
 #' Returns the indices corresponding to the items
@@ -88,7 +155,7 @@ setGeneric("getItemsIndices", function(mapping, items) standardGeneric("getItems
 setMethod(
 		"getItemsIndices",
 		signature( "MgsaSets","character" ),
-		function( mapping, items ) mapping@itemName2ItemIndex[items]
+		function( mapping, items ) mapping@itemAnnotations
 )
 
 setMethod(
