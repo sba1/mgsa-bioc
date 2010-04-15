@@ -76,14 +76,17 @@ setMethod("initialize", "MgsaSets",
 							}
 						}
 						
-						if (any(.Object@itemName2ItemIndex != 1:.Object@numberOfItems))
+						if (length(.Object@numberOfItems) != 0)
 						{
-							stop("Provided itemName2ItemIndex should be equal to 1:numberOfItems for now.");
+							if (any(.Object@itemName2ItemIndex != (1:.Object@numberOfItems)))
+							{
+								stop("Provided itemName2ItemIndex should be equal to 1:numberOfItems for now.");
+							}
 						}
 
 						if (any(duplicated(names(.Object@itemName2ItemIndex))))
 						{
-							stop("itemName2ItemIndex should not contain duplicated names.");
+							stop("Provided itemName2ItemIndex should not contain duplicated names.");
 						}
 
 						if (length(.Object@setAnnotations)==0)
@@ -93,7 +96,7 @@ setMethod("initialize", "MgsaSets",
 
 						if (length(.Object@itemAnnotations)==0)
 						{
-							.Object@itemAnnotations<-data.frame(row.names=names(itemName2ItemIndex))
+							.Object@itemAnnotations<-data.frame(row.names=names(.Object@itemName2ItemIndex))
 						}
 						
 						.Object
@@ -155,13 +158,15 @@ setGeneric("getItemsIndices", function(mapping, items) standardGeneric("getItems
 setMethod(
 		"getItemsIndices",
 		signature( "MgsaSets","character" ),
-		function( mapping, items ) mapping@itemAnnotations
+		function( mapping, items ) mapping@itemName2ItemIndex[items]
 )
+
 
 setMethod(
 		"getItemsIndices",
 		signature( "MgsaSets", "numeric" ),
-		function( mapping, items ) mapping@itemName2ItemIndex[items])
+		function( mapping, items ) mapping@itemName2ItemIndex[items]
+)
 
 
 #'

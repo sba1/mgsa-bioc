@@ -1,5 +1,5 @@
 #'
-#' This functions takes a mapping of go.ids and items and returns
+#' This functions takes a mapping of go.ids to items and returns
 #' a list containing a list ofset -> item mappings suitable for mgsa
 #' and a mapping function which can be used to get the index of a item
 #' name
@@ -39,6 +39,9 @@ mgsa.make.go.mapping<-function(go.ids,items)
 											 "WHERE ga.go_id = goDB.go_term.go_id AND goDB.go_term._id = goDB.go_mf_offspring._offspring_id AND goDB.go_mf_offspring._id = go2._id",
 									     "UNION SELECT DISTINCT ga.items AS items,goDB.go_term._id,goDB.go_term.go_id AS go_id FROM ga,goDB.go_term WHERE ga.go_id = goDB.go_term.go_id"))
 
+
+	term.anno.db<-dbGetQuery(annotation.con,"SELECT go_id,term,definition FROM goDB.go_term");
+
 	# Cleanup
 	dbGetQuery(annotation.con, "DETACH goDB" )
 	dbDisconnect(annotation.con)
@@ -49,11 +52,14 @@ mgsa.make.go.mapping<-function(go.ids,items)
 	all.items.names<-as.vector(levels(all.items))
 	levels(all.items)<-1:length(unique(all.items))
 
-	sets<-split(as.integer(all.items),all$id)
+	sets<-split(as.integer(all.items),all$go_id)
 	itemName2ItemIndex<-1:length(all.items.names)
 	names(itemName2ItemIndex)<-all.items.names
 
-	mapping<-new("MgsaGoSets",sets=sets,itemName2ItemIndex=itemName2ItemIndex);
+	term.anno<-data.frame(row.names=term.anno.db[,1],term.anno.db[,-1])
+	term.anno<-term.anno[names(sets),]
+	
+	mapping<-new("MgsaGoSets",sets=sets,itemName2ItemIndex=itemName2ItemIndex,setAnnotations=term.anno);
 	
 	return(mapping)
 }
@@ -64,7 +70,7 @@ mgsa.make.go.mapping<-function(go.ids,items)
 #'
 #' TODO:  provide support for evidence codes, choose a better name
 #'
-mgsa.make.go.mapping.from.goa<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7)
+mgsa.make.go.mapping.from.goa<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7, name.col = 10)
 {
     goa = read.delim(gzfile(filename), na.strings = "", header=F, comment.char = "!", sep="\t")
     
@@ -72,9 +78,17 @@ mgsa.make.go.mapping.from.goa<-function(filename, gene.id.col = 3, go.id.col = 5
             data.frame ( 
                     go.ids = goa[,go.id.col],
                     gene.ids = goa[, gene.id.col],
-                    evidence = goa[, evidence.col]							
+                    evidence = goa[, evidence.col],
+					name = goa[, name.col]
             )
     )
 
-	return(mgsa.make.go.mapping(go.ids=goa$go.ids,items=goa$gene.ids))
+	sets<-mgsa.make.go.mapping(go.ids=goa$go.ids,items=goa$gene.ids)
+	item.annot <- unique(goa[, c("gene.ids", "name")])
+	if(any(duplicated(item.annot$gene.ids))) stop("At least one DB object ID has multiple DB object names in gene ontology annotation file.")
+	browser()
+	sets@itemAnnotations <- data.frame(row.names = item.annot[, "gene.ids"], name=as.character(item.annot[, "name"]))
+	sets@itemAnnotations <- sets@itemAnnotations[names(sets@itemName2ItemIndex),,drop=FALSE]
+	
+	return(sets)
 }
