@@ -53,7 +53,7 @@ mgsa.make.go.mapping<-function(go.ids,items)
 	itemName2ItemIndex<-1:length(all.items.names)
 	names(itemName2ItemIndex)<-all.items.names
 
-	mapping<-new("MgsaGoMapping",sets=sets,itemName2ItemIndex=itemName2ItemIndex);
+	mapping<-new("MgsaGoSets",sets=sets,itemName2ItemIndex=itemName2ItemIndex);
 	
 	return(mapping)
 }

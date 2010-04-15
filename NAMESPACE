@@ -2,8 +2,8 @@ useDynLib(mgsa)
 importFrom(graphics, plot)
 
 exportClasses(
-              "MgsaMapping",
-              "MgsaGoMapping",
+              "MgsaSets",
+              "MgsaGoSets",
               "MgsaResults"
               )
 
@@ -11,7 +11,7 @@ exportMethods(
               "getItemsIndices", 
               "getSubMapping",
               "mgsa",
-              "MgsaMapping",
+              "MgsaSets",
               "plot",  
               "show"
               )
