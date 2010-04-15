@@ -8,8 +8,8 @@ Depends: R (>= 2.9.0), methods
 Description: Model-based gene set analysis
 License: GPL (>= 2)
 Collate: 	MgsaResults-class.R
-			MgsaMapping-class.R
-			MgsaGoMapping-class.R
+			MgsaSets-class.R
+			MgsaGoSets-class.R
 			mgsa.R
 			make_GOA_matrices.R
 			mgsa_make_mapping.R

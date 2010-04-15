@@ -1,9 +1,9 @@
 #' Mapping class for GO terms.
 #' Nothing new yet, it comes later
 setClass(
-		"MgsaGoMapping",
+		"MgsaGoSets",
 		representation = representation(
 		),
-		contains = "MgsaMapping"
+		contains = "MgsaSets"
 )
 

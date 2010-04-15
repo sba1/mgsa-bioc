@@ -5,7 +5,7 @@
 #' TODO: Add proper accessor functions and find out how to hide
 #' the raw attributes.
 setClass(
-        "MgsaMapping",
+        "MgsaSets",
         representation = representation(
 							# Sets also have attribute names(). Elements are
 							# just vectors of item indices.
@@ -22,7 +22,7 @@ setClass(
 #' 
 #' This intializes the mapping when some of the parameter are not specifed
 
-setMethod("initialize", "MgsaMapping",
+setMethod("initialize", "MgsaSets",
 					function(.Object, ...) {
 						.Object <- callNextMethod()
 						
@@ -71,12 +71,12 @@ setMethod("initialize", "MgsaMapping",
 #'
 #' Constructor
 #' 
-setGeneric("MgsaMapping", function(sets) standardGeneric("MgsaMapping"))
+setGeneric("MgsaSets", function(sets) standardGeneric("MgsaSets"))
 
 setMethod(
-		"MgsaMapping",
+		"MgsaSets",
 		signature("list"),
-		function(sets) new("MgsaMapping",sets=sets)
+		function(sets) new("MgsaSets",sets=sets)
 )
 
 
@@ -87,13 +87,13 @@ setGeneric("getItemsIndices", function(mapping, items) standardGeneric("getItems
 
 setMethod(
 		"getItemsIndices",
-		signature( "MgsaMapping","character" ),
+		signature( "MgsaSets","character" ),
 		function( mapping, items ) mapping@itemName2ItemIndex[items]
 )
 
 setMethod(
 		"getItemsIndices",
-		signature( "MgsaMapping", "numeric" ),
+		signature( "MgsaSets", "numeric" ),
 		function( mapping, items ) mapping@itemName2ItemIndex[items])
 
 
@@ -105,7 +105,7 @@ setGeneric("getSubMapping", function(mapping, items) standardGeneric("getSubMapp
 
 setMethod(
 		"getSubMapping",
-		signature( "MgsaMapping", "numeric" ),
+		signature( "MgsaSets", "numeric" ),
 		function( mapping, items )
 		{
 			sets<-mapping@sets
@@ -142,7 +142,7 @@ setMethod(
 				subsets<-split(as.vector(subitem.names.f),subitem.sets)
 			}
 
-			mapping<-new("MgsaMapping",sets=subsets)
+			mapping<-new("MgsaSets",sets=subsets)
 			
 			return(mapping)
 		})
