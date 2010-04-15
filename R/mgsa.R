@@ -197,7 +197,7 @@ if (F) # "topGO" %in% installed.packages()[,1])
 # TODO: make it also work with integers
 setMethod(
 		"mgsa",
-		signature = c(o="character", sets="MgsaMapping"),
+		signature = c(o="character", sets="MgsaSets"),
 		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
 			if (is.null(population))
 			{
