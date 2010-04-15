@@ -1084,6 +1084,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP ty
 			if (nsets[i][j] >= INTEGER_VALUE(n))
 			{
 				error("Set index to high (must not exceed 'n')");
+				UNPROTECT(1);
 				goto bailout;
 			}
 		}
@@ -1364,7 +1365,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP ty
 				setAttrib(max_run,R_NamesSymbol,max_run_names);
 				SET_VECTOR_ELT(max,run,max_run);
 
-				UNPROTECT(1);
+				UNPROTECT(2); /* max_run and max_run_names */
 			}
 
 			SET_VECTOR_ELT(res,4,max);
