@@ -18,7 +18,7 @@
 #' posteriors of each set. The last two hold, for each set, the counts.
 #' 
 #' The current represenation is tightly coupled to an MCMC solver, which may
-#' or may not replaced in the furture. Therefore, everything is subject to change.
+#' or may not replaced in the future. Therefore, everything is subject to change.
 #' You've been warned!
 #' 
 
@@ -32,6 +32,67 @@ setClass(
 		)
 )
 
+### populationSize
+
+setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
+
+setMethod(
+		"populationSize",
+		signature( "MgsaResults" ),
+		function( x ) x@populationSize
+)
+
+### studySetSizeInPopulation
+
+setGeneric( "studySetSizeInPopulation", function(x) standardGeneric( "studySetSizeInPopulation" ) )
+
+setMethod(
+		"studySetSizeInPopulation",
+		signature( "MgsaResults" ),
+		function( x ) x@studySetSizeInPopulation
+)
+
+
+### alphaPost
+
+setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
+
+setMethod(
+		"alphaPost",
+		signature( "MgsaResults" ),
+		function( x ) x@alphaPost
+)
+
+### betaPost
+
+setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
+
+setMethod(
+		"betaPost",
+		signature( "MgsaResults" ),
+		function( x ) x@betaPost
+)
+
+### pPost
+
+setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
+
+setMethod(
+		"pPost",
+		signature( "MgsaResults" ),
+		function( x ) x@pPost
+)
+
+### setsResults
+
+setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
+
+setMethod(
+		"setsResults",
+		signature( "MgsaResults" ),
+		function( x ) x@setsResults
+)
+
 
 #### MgsaMcmcResults
 setClass(
@@ -43,6 +104,55 @@ setClass(
 				alphaMcmcPost = "matrix", betaMcmcPost = "matrix", pMcmcPost ="matrix", setsMcmcPost = "matrix"
 		)
 )
+
+#### Number of steps
+setGeneric( "steps", function(x) standardGeneric( "steps" ) )
+
+setMethod(
+		"steps",
+		signature( "MgsaMcmcResults" ),
+		function( x ) x@steps
+)
+
+#### Number of restarts
+setGeneric( "restarts", function(x) standardGeneric( "restarts" ) )
+
+setMethod(
+		"restarts",
+		signature( "MgsaMcmcResults" ),
+		function( x ) x@restarts
+)
+
+#### alphaMcmcPost
+setGeneric( "alphaMcmcPost", function(x) standardGeneric( "alphaMcmcPost" ) )
+
+setMethod(
+		"alphaMcmcPost",
+		signature( "MgsaMcmcResults" ),
+		function( x ) x@alphaMcmcPost
+)
+
+
+#### betaMcmcPost
+setGeneric( "betaMcmcPost", function(x) standardGeneric( "betaMcmcPost" ) )
+
+setMethod(
+		"betaMcmcPost",
+		signature( "MgsaMcmcResults" ),
+		function( x ) x@betaMcmcPost
+)
+
+
+#### pMcmcPost
+setGeneric( "pMcmcPost", function(x) standardGeneric( "pMcmcPost" ) )
+
+setMethod(
+		"pMcmcPost",
+		signature( "MgsaMcmcResults" ),
+		function( x ) x@pMcmcPost
+)
+
+
 
 ######## Accessors and replacement methods
 ## add some only if really needed
