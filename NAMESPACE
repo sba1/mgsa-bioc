@@ -17,5 +17,6 @@ exportMethods(
               )
 
 export(
-              "mgsa.make.go.mapping",
-              "mgsa.make.go.mapping.from.goa")
+       "CreateMgsaGoSets",
+       "CreateMgsaGoSetsFromGAF"
+      )

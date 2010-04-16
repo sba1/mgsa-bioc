@@ -12,6 +12,5 @@ Collate: 	MgsaResults-class.R
 			MgsaGoSets-class.R
 			mgsa.R
 			make_GOA_matrices.R
-			mgsa_make_mapping.R
 			zzz.R
 LazyLoad: yes
