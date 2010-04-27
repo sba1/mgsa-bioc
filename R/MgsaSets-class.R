@@ -26,10 +26,10 @@ setClass(
 )
 #' Initialization
 #' 
-#' This intializes the mapping when some of the parameter are not specifed
-
-setMethod("initialize", "MgsaSets",
-					function(.Object, ...) {
+#' This intializes the mapping when some of the parameter are not specified
+setMethod(f = "initialize",
+		  signature = c("MgsaSets"),
+		  def = function(.Object, ...) {
 						.Object <- callNextMethod()
 						
 						# Needs numberOfItems to be initialized?

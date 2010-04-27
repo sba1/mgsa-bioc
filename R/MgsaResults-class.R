@@ -97,7 +97,7 @@ setMethod(
 #### MgsaMcmcResults
 setClass(
 		"MgsaMcmcResults",
-		contains = "MgsaResults",
+		contains = c("MgsaResults"),
 		representation = representation(
 				steps = "numeric",
 				restarts = "numeric",

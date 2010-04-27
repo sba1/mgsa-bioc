@@ -128,17 +128,17 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 
 ## S4 implementation: generic declaration
 setGeneric(
-		"mgsa",
-		function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0,  as=integer(0), debug=0){
+		name="mgsa",
+		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0,  as=integer(0), debug=0){
 			standardGeneric("mgsa")
 		}
 )
 
-# o integer and sets list
+#' o integer and sets list
 setMethod(
-		"mgsa",
+		f="mgsa",
 		signature = c(o="integer", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		{
 			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		}
@@ -146,9 +146,9 @@ setMethod(
 
 # o numeric and sets list
 setMethod(
-		"mgsa",
+		f="mgsa",
 		signature = c(o="numeric", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		{
 			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		}
@@ -156,9 +156,9 @@ setMethod(
 
 # o character and sets list
 setMethod(
-		"mgsa",
+		f="mgsa",
 		signature = c(o="character", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		{
 			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
 		}
@@ -166,9 +166,9 @@ setMethod(
 
 # o logical => coerce to integer with which() and call mgsa()
 setMethod(
-		"mgsa",
+		f="mgsa",
 		signature = c(o="logical", sets="list"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
 			if (is.null(population)) population <- 1:length(o)
 			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads, as, debug )
 		}
@@ -184,9 +184,9 @@ if (F) # "topGO" %in% installed.packages()[,1])
 	library(topGO)
 	
 	setMethod(
-			"mgsa",
+			f="mgsa",
 			signature = c(o="topGOdata",sets="missing"),
-			function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
+			def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
 				data <- o
 				mgsa.main(sigGenes(data), genesInTerm(data), population, alpha, beta, p, steps, restarts, threads)
 			})
@@ -196,9 +196,9 @@ if (F) # "topGO" %in% installed.packages()[,1])
 # o character and mapping object
 # TODO: make it also work with integers
 setMethod(
-		"mgsa",
+		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
-		function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need

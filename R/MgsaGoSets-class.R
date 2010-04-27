@@ -2,6 +2,9 @@
 #' In this file, we define the MgsaGoSets class and some functions to
 #' create usable objects from it.
 #' 
+#' @include MgsaSets-class.R
+
+NULL
 
 #' Set class for GO terms.
 #' 
@@ -9,11 +12,10 @@
 #' 
 setClass(
 		"MgsaGoSets",
+		contains = c("MgsaSets"),
 		representation = representation(
-		),
-		contains = "MgsaSets"
+		)
 )
-
 
 
 #'

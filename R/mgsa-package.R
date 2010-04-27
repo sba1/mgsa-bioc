@@ -6,4 +6,5 @@
 #' }
 #' @name mgsa-package
 #' @title Model-based gene set analysis
-roxygen()
+#' @keywords  package
+NULL
