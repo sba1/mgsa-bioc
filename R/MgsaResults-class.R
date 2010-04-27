@@ -21,6 +21,13 @@
 #' or may not replaced in the future. Therefore, everything is subject to change.
 #' You've been warned!
 #' 
+#' @seealso 
+#' \code{\link{populationSize}}
+#' \code{\link{studySetSizeInPopulation}}
+#' \code{\link{alphaPost}}
+#' \code{\link{betaPost}}
+#' \code{\link{pPost}}
+#' 
 
 setClass(
 		"MgsaResults",
@@ -36,6 +43,9 @@ setClass(
 
 setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
 
+#' 
+#' Returns the size of the population of which the analysis was run.
+#' 
 setMethod(
 		"populationSize",
 		signature( "MgsaResults" ),
@@ -46,6 +56,9 @@ setMethod(
 
 setGeneric( "studySetSizeInPopulation", function(x) standardGeneric( "studySetSizeInPopulation" ) )
 
+#'
+#' Returns the size of the study set of which the analysis was run.
+#' 
 setMethod(
 		"studySetSizeInPopulation",
 		signature( "MgsaResults" ),
@@ -94,7 +107,17 @@ setMethod(
 )
 
 
-#### MgsaMcmcResults
+#'
+#' Instances of this class are used to hold the additional information 
+#' that was provided by running an MCMC algorithm.
+#' 
+#' @seealso
+#'  \code{\link{steps}}
+#'  \code{\link{restarts}}
+#'  \code{\link{alphaMcmcPost}}
+#'  \code{\link{betaMcmcPost}}
+#'  \code{\link{pMcmcPost}}
+#' 
 setClass(
 		"MgsaMcmcResults",
 		contains = c("MgsaResults"),

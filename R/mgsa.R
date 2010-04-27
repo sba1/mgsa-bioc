@@ -135,6 +135,7 @@ setGeneric(
 )
 
 #' o integer and sets list
+
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),

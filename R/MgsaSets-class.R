@@ -5,7 +5,7 @@
 #' TODO: Add proper accessor functions and find out how to hide
 #' the raw attributes.
 setClass(
-        "MgsaSets",
+        Class="MgsaSets",
         representation = representation(
 							# Sets also have attribute names(). Elements are
 							# just vectors of item indices.
@@ -107,20 +107,28 @@ setMethod(f = "initialize",
 #' 
 setGeneric("MgsaSets", function(sets) standardGeneric("MgsaSets"))
 
+#'
+#' Constructs an instance of class MgsaSet.
+#' 
+#' @param sets a list in which each entry corresponds to a set
+#' 
 setMethod(
-		"MgsaSets",
+		f="MgsaSets",
 		signature("list"),
 		function(sets) new("MgsaSets",sets=sets)
 )
 
-#'
-#' Returns the items' annotations
-#'
 
 setGeneric( "getItemAnnotations", function(sets,items) standardGeneric( "getItemAnnotations" ) )
 
+#'
+#' Returns the annotations of the given items.
+#' 
+#' @param sets an instance of class \code{\linkS4class{MgsaSets}}
+#' @param items an optional vector specifying the items of interest.
+#'
 setMethod(
-		"getItemAnnotations",
+		f="getItemAnnotations",
 		signature( "MgsaSets", "missing" ),
 		function( sets, items ) sets@itemAnnotations
 )
