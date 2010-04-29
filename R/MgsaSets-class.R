@@ -25,11 +25,13 @@ setClass(
 			)
 )
 
-#' @keywords internal
 #' 
 #' Initialization
 #' 
 #' This intializes the mapping when some of the parameter are not specified
+#' 
+#' @keywords internal
+#' 
 setMethod(f = "initialize",
 		  signature = c("MgsaSets"),
 		  def = function(.Object, ...) {
