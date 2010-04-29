@@ -1,7 +1,7 @@
 #'
-#' @keywords internal
-#' 
 #' Trampoline to jump into the fast C implementation.
+#' 
+#' @keywords internal
 #' 
 mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
 	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, NA, p, steps, restarts, threads, as)
@@ -9,11 +9,12 @@ mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, rest
 }
 
 
-#' @keywords internal
 #'
 #' Calculates a point estimate for each row (the mean) and std.error of the mean.
 #'  
 #' @param x specifies a matrix of values with as a many columns as MCMC runs
+#' 
+#' @keywords internal
 #'
 mcmcSummary <- function(x){
 	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
@@ -21,8 +22,6 @@ mcmcSummary <- function(x){
 
 
 #'
-#' @keywords internal 
-#' 
 #' Wraps the mgsa.trampoline function. It is dumb with respect to input parameter
 #' but returns a processed result.
 #' 
@@ -41,6 +40,8 @@ mcmcSummary <- function(x){
 #' @param specifies the debug level. Mainly for internal use.
 #' 
 #' @return an object of class MgsaMcmcResults.
+#' 
+#' @keywords internal 
 #' 
 mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
 {
@@ -90,8 +91,6 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 }
 
 #'
-#' @keywords internal
-#' 
 #' The main function that treats the case of character and integer inputs.
 #' 
 #' @param o a vector that defines the items that are observed. Items can be anything that
@@ -107,6 +106,8 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
 #'        corresponds to the number of available cores.
 #' @param as define the active sets. No MCMC is run in this case. Just the log likelihood is returned.  
+#'
+#' @keywords internal
 #' 
 mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
@@ -213,10 +214,26 @@ setMethod(
 #			})
 #}
 
-
+#' 
+#' Performs an Mgsa analysis.
+#' 
+#' Currently, the Mgsa problem is solved using an MCMC sampling algorithm.  
+#' 
+#' @param o specifies the items which are observed.
+#' @param sets an instance of class MgsaSets. Alternatively, a list of sets can be specified.
+#'        Each set is a vector that contains associated items. The vector can be of any data type,
+#'        for instance, integers or characters.
+#' @param population
+#' @param alpha
+#' @param beta
+#' @param p
+#' @param steps defines the number of the MCMC sampler. A recommended value is 1e6 or greater. 
+#' @param restarts defines the number of MCMC restarts. Must be greater or equal to 1.
+#' @param threads defines the number of threads that should be used. A value of 0 means to use all available cores. Default to 0.  
+#' 
+#' @references GOing Bayesian: model-based gene set analysis of genome-scale data.
 #' @rdname mgsa
-#' o character and mapping object
-#' TODO: make it also work with integers
+#'  
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
