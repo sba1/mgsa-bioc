@@ -24,6 +24,9 @@ setClass(
 							itemAnnotations = "data.frame"
 			)
 )
+
+#' @keywords internal
+#' 
 #' Initialization
 #' 
 #' This intializes the mapping when some of the parameter are not specified

@@ -1,20 +1,36 @@
 #'
+#' @keywords internal
+#' 
 #' Trampoline to jump into the fast C implementation.
-#'
+#' 
 mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
 	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, NA, p, steps, restarts, threads, as)
 	return (res)
 }
 
 
+#' @keywords internal
 #'
+#' Calculates a point estimate for each row (the mean) and std.error of the mean.
+#'  
+#' @param x specifies a matrix of values with as a many columns as MCMC runs
+#'
+mcmcSummary <- function(x){
+	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
+}
+
+
+#'
+#' @keywords internal 
+#' 
 #' Wraps the mgsa.trampoline function. It is dumb with respect to input parameter
 #' but returns a processed result.
 #' 
-#' @param o which items are observed. Items are represented by integers  
-#' @param sets list of sets. It is expected that each set contains integers
-#'        that correspond to item to which the set is associated
-#' @param n total number of items.
+#' @param o a vector, which defines the items that are observed. Items are expressed using
+#'        integer values between 1 and \code{n}. 
+#' @param sets list of sets. It is expected that each set contains integers in range between
+#'        1 and \code{n} that correspond to items to which the set is associated.
+#' @param n defines the total number of items. 
 #' @param alpha
 #' @param beta
 #' @param p 
@@ -26,16 +42,8 @@ mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, rest
 #' 
 #' @return an object of class MgsaMcmcResults.
 #' 
-
-## helper function
-# x : a matrix of values with as a many columns as MCMC runs  
-# returns a point estimate for each row (the mean) and std.error of the mean 
-mcmcSummary <- function(x){
-	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
-}
-
-mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
-	
+mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
+{
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
 	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads, as)
@@ -82,15 +90,19 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 }
 
 #'
+#' @keywords internal
+#' 
 #' The main function that treats the case of character and integer inputs.
 #' 
-#' @param o 
-#' @param sets
-#' @param population
+#' @param o a vector that defines the items that are observed. Items can be anything that
+#'        occurs in sets.
+#' @param sets a list of sets. Each set is a vector that contains all the items. The vector
+#'        can be of any data type, for instance, integers or characters.
+#' @param population defines the set of item that should be considered for this calculation.
 #' @param alpha
 #' @param beta
 #' @param p 
-#' @param steps number of MCMC steps to be performed
+#' @param steps defines the number of MCMC steps to be performed.
 #' @param restarts defines the number of restarts.
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
 #'        corresponds to the number of available cores.
@@ -127,6 +139,10 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 
 
 ## S4 implementation: generic declaration
+#' Performs an mgsa analysis
+#' 
+#' @rdname mgsa
+#' 
 setGeneric(
 		name="mgsa",
 		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0,  as=integer(0), debug=0){
@@ -134,8 +150,11 @@ setGeneric(
 		}
 )
 
-#' o integer and sets list
-
+#' 
+#' Performs an mgsa analysis
+#' 
+#' @param o
+#' 
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),
@@ -145,7 +164,7 @@ setMethod(
 		}
 )
 
-# o numeric and sets list
+#' o numeric and sets list
 setMethod(
 		f="mgsa",
 		signature = c(o="numeric", sets="list"),
@@ -155,7 +174,7 @@ setMethod(
 		}
 )
 
-# o character and sets list
+#' o character and sets list
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="list"),
@@ -165,7 +184,8 @@ setMethod(
 		}
 )
 
-# o logical => coerce to integer with which() and call mgsa()
+#' @rdname mgsa
+#' o logical => coerce to integer with which() and call mgsa()
 setMethod(
 		f="mgsa",
 		signature = c(o="logical", sets="list"),
@@ -180,22 +200,23 @@ setMethod(
 #
 # Hmm...any ideas for doing this in a more elegant fashion?
 # (sets is not required at all here)
-if (F) # "topGO" %in% installed.packages()[,1])
-{
-	library(topGO)
-	
-	setMethod(
-			f="mgsa",
-			signature = c(o="topGOdata",sets="missing"),
-			def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
-				data <- o
-				mgsa.main(sigGenes(data), genesInTerm(data), population, alpha, beta, p, steps, restarts, threads)
-			})
-}
+#if (F) # "topGO" %in% installed.packages()[,1])
+#{
+#	library(topGO)
+#	
+#	setMethod(
+#			f="mgsa",
+#			signature = c(o="topGOdata",sets="missing"),
+#			def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
+#				data <- o
+#				mgsa.main(sigGenes(data), genesInTerm(data), population, alpha, beta, p, steps, restarts, threads)
+#			})
+#}
 
 
-# o character and mapping object
-# TODO: make it also work with integers
+#' @rdname mgsa
+#' o character and mapping object
+#' TODO: make it also work with integers
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
