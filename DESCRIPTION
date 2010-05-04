@@ -9,5 +9,5 @@ Depends: R (>= 2.9.0), methods
 Description: Model-based gene set analysis
 License: GPL (>= 2)
 LazyLoad: yes
-Collate: 'make_GOA_matrices.R' 'MgsaSets-class.R' 'MgsaGoSets-class.R'
-    'mgsa-package.R' 'mgsa.R' 'MgsaResults-class.R' 'zzz.R'
+Collate: 'MgsaSets-class.R' 'MgsaGoSets-class.R' 'mgsa-package.R'
+    'mgsa.R' 'MgsaResults-class.R' 'zzz.R'
