@@ -12,7 +12,13 @@ exportMethods(
               "getSubMapping",
               "mgsa",
               "MgsaSets",
-              "plot",  
+              "setsResults",
+              "populationSize",
+              "studySetSizeInPopulation",
+              "alphaPost",
+              "betaPost",
+              "pPost",
+              "plot",
               "show"
               )
 
