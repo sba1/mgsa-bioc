@@ -17,10 +17,12 @@
 #' Attribute setsResults is a dataFrame in which the first columns represent the marginal
 #' posteriors of each set. The last two hold, for each set, the counts.
 #' 
-#' The current represenation is tightly coupled to an MCMC solver, which may
+#' The current representation is tightly coupled to an MCMC solver, which may
 #' or may not replaced in the future. Therefore, everything is subject to change.
 #' You've been warned!
 #' 
+#' 
+#'  
 #' @seealso 
 #' \code{\link{populationSize}}
 #' \code{\link{studySetSizeInPopulation}}

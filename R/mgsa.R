@@ -4,7 +4,7 @@
 #' @keywords internal
 #' 
 mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
-	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, NA, p, steps, restarts, threads, as)
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, NA, steps, restarts, threads, as)
 	return (res)
 }
 
@@ -140,10 +140,28 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 
 
 ## S4 implementation: generic declaration
-#' Performs an mgsa analysis
 #' 
+#' Performs an Mgsa analysis.
+#' 
+#' Currently, the Mgsa problem is solved using an MCMC sampling algorithm.  
+#' 
+#' @param o The observations. \code{o} can be a \code{numeric}, \code{integer}, \code{character} or \code{logical}.
+#'  If \code{o} is \code{numeric}, \code{integer} or \code{character}, the entries are the items that are observed positive.
+#' If \code{o} is \code{logical}, its codes the observation vector (\code{TRUE} for the items observed positives \code{FALSE} otherwise) .   
+#' @param sets an instance of class MgsaSets. Alternatively, a list of sets can be specified.
+#'        Each set is a vector that contains associated items. The vector can be of any data type,
+#'        for instance, integers or characters.
+#' @param population
+#' @param alpha
+#' @param beta
+#' @param p
+#' @param steps defines the number of the MCMC sampler. A recommended value is 1e6 or greater. 
+#' @param restarts defines the number of MCMC restarts. Must be greater or equal to 1.
+#' @param threads defines the number of threads that should be used. A value of 0 means to use all available cores. Default to 0.  
+#' 
+#' @references GOing Bayesian: model-based gene set analysis of genome-scale data.
 #' @rdname mgsa
-#' 
+#'  
 setGeneric(
 		name="mgsa",
 		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0,  as=integer(0), debug=0){
@@ -196,6 +214,25 @@ setMethod(
 		}
 )
 
+
+setMethod(
+		f="mgsa",
+		signature = c(o="character", sets="MgsaSets"),
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+			if (is.null(population))
+			{
+				# If no population has been specified, we do not need
+				# to consolidate the set and obervation ids
+				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads, as, debug))
+			}
+			else
+			{
+				population<-getItemsIndices(sets,population)
+				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads, as, debug))
+			}
+		}
+)
+
 #
 # topGO support is optional. It is provided for convenience
 #
@@ -214,40 +251,3 @@ setMethod(
 #			})
 #}
 
-#' 
-#' Performs an Mgsa analysis.
-#' 
-#' Currently, the Mgsa problem is solved using an MCMC sampling algorithm.  
-#' 
-#' @param o specifies the items which are observed.
-#' @param sets an instance of class MgsaSets. Alternatively, a list of sets can be specified.
-#'        Each set is a vector that contains associated items. The vector can be of any data type,
-#'        for instance, integers or characters.
-#' @param population
-#' @param alpha
-#' @param beta
-#' @param p
-#' @param steps defines the number of the MCMC sampler. A recommended value is 1e6 or greater. 
-#' @param restarts defines the number of MCMC restarts. Must be greater or equal to 1.
-#' @param threads defines the number of threads that should be used. A value of 0 means to use all available cores. Default to 0.  
-#' 
-#' @references GOing Bayesian: model-based gene set analysis of genome-scale data.
-#' @rdname mgsa
-#'  
-setMethod(
-		f="mgsa",
-		signature = c(o="character", sets="MgsaSets"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
-			if (is.null(population))
-			{
-				# If no population has been specified, we do not need
-				# to consolidate the set and obervation ids
-				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads, as, debug))
-			}
-			else
-			{
-				population<-getItemsIndices(sets,population)
-				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads, as, debug))
-			}
-		}
-)

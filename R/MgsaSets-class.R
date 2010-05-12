@@ -20,7 +20,7 @@ setClass(
 							# Same order as sets
 							setAnnotations = "data.frame",
 			
-							# Rows are orderd according to item indices and contains the item annotations
+							# Rows are ordered according to item indices and contain the item annotations
 							itemAnnotations = "data.frame"
 			)
 )
@@ -184,7 +184,7 @@ setMethod(
 
 #'
 #' Returns a subset of mapping, i.e., a mapping, in which only the given
-#' items are assinged to sets. The number of sets of this mapping may also differ.
+#' items are assigned to sets. The number of sets of this mapping may also differ.
 #' 
 setGeneric("getSubMapping", function(mapping, items) standardGeneric("getSubMapping"))
 

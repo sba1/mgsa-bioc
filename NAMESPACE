@@ -13,8 +13,6 @@ exportMethods(
               "mgsa",
               "MgsaSets",
               "setsResults",
-              "populationSize",
-              "studySetSizeInPopulation",
               "alphaPost",
               "betaPost",
               "pPost",

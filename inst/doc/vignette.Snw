@@ -1,19 +1,65 @@
 \documentclass[a4paper]{article}
-\title{MGSA Vignette}
-\author{Sebastian Bauer}
+\title{The \emph{mgsa} package}
+\author{Sebastian Bauer, Julien Gagneur}
+\date{11 May 2010}
+
+% The is for R CMD check, which finds it in spite of the "%", and also for
+% automatic creation of links in the HTML documentation for the package:
+% \VignetteIndexEntry{Overview of the genomeIntervals package.}
+
+
+
 \begin{document}
+
+%%%%%%%% Setup
+
+% Don't reform code
+\SweaveOpts{keep.source=TRUE}
+
+% Size for figures
+\setkeys{Gin}{width=\textwidth}
+
+% Reduce characters per line in R output
+
+<<set_width, echo=FALSE>>=
+options( width = 80 )
+@ 
+
+% Make title
 \maketitle
-In this example we embed parts of the examples from the
-\texttt{kruskal.test } help page into a \LaTeX{} document :
-<<>>=
+
+
+%%%%%%%% Main text
+
+\section{Introduction}
+Model-based Gene Set Analysis (MGSA, Bauer et al.[1]) is a Bayesian modeling approach for gene set enrichment.
+The package \emph{mgsa} implements MGSA and tools to use it with the Gene Ontology. 
+
+\section{Quick start}
+We start with a small simulated dataset which contains \texttt{example\_go}, a random subset of yeast gene ontology annotations with 20 terms and
+\texttt{example\_o}, a set of observed positive genes.
+These genes could for example be the "hits" of some screen or a set of differentially expressed genes.
+In the simulation, the terms GO:0006109 and GO:0030663 were active, implying that genes annotated to these terms were more likely to be observed positives than other genes. 
+<<loadex>>=
 library(mgsa)
+data("example")
+example_o
 @
-which shows that the location parameter of the Ozone
-distribution varies significantly from month to month. Finally we
-include a boxplot of the data:
-\begin{center}
-<<fig=TRUE, echo=FALSE>>=
-plot(1,2)
+
+The method \texttt{mgsa} fits the MGSA model.
+It returns a \texttt{MgsaMcmcResults} object whose \texttt{print} method displays the most likely active terms. 
+On this example, \texttt{mgsa} correctly reports largest posterior probabilities for the terms GO:0006109 and GO:0030663. 
+<<fitex>>=
+fit = mgsa(example_o, example_go, alpha=0.05*(1:10), beta=0.1*(1:8))
+fit
 @
-\end{center}
+
+The method \texttt{plot} provides a graphical visualization of the fit.
+
+<<plotex, fig=TRUE>>=
+plot(fit)
+@
+
+\section{References}
+1. Bauer, Gagneur, Robinson, NAR, 2010.
 \end{document}
