@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 \title{The \emph{mgsa} package}
 \author{Sebastian Bauer, Julien Gagneur}
-\date{11 May 2010}
+\date{9 June 2010}
 
 % The is for R CMD check, which finds it in spite of the "%", and also for
 % automatic creation of links in the HTML documentation for the package:
@@ -33,11 +33,11 @@ options( width = 80 )
 
 \section{Introduction}
 Model-based Gene Set Analysis (MGSA, Bauer et al.[1]) is a Bayesian modeling approach for gene set enrichment.
-The package \emph{mgsa} implements MGSA and tools to use it with the Gene Ontology. 
+The package \emph{mgsa} implements MGSA and tools to use MGSA together with the Gene Ontology. 
 
 \section{Quick start}
 We start with a small simulated dataset which contains \texttt{example\_go}, a random subset of yeast gene ontology annotations with 20 terms and
-\texttt{example\_o}, a set of observed positive genes.
+\texttt{example\_o}, a simulated set of observed positive genes.
 These genes could for example be the "hits" of some screen or a set of differentially expressed genes.
 In the simulation, the terms GO:0006109 and GO:0030663 were active, implying that genes annotated to these terms were more likely to be observed positives than other genes. 
 <<loadex>>=
@@ -48,8 +48,11 @@ example_o
 
 The method \texttt{mgsa} fits the MGSA model.
 It returns a \texttt{MgsaMcmcResults} object whose \texttt{print} method displays the most likely active terms. 
-On this example, \texttt{mgsa} correctly reports largest posterior probabilities for the terms GO:0006109 and GO:0030663. 
+On this example, \texttt{mgsa} correctly reports largest posterior probabilities for the terms GO:0006109 and GO:0030663.
+The call to \texttt{set.seed()}, which sets the seed of the random number generator, simply ensures the example of this vignette to be reproducible.
+It is not required for \texttt{mgsa()} to work. 
 <<fitex>>=
+set.seed(0)
 fit = mgsa(example_o, example_go, alpha=0.05*(1:10), beta=0.1*(1:8))
 fit
 @
@@ -59,6 +62,9 @@ The method \texttt{plot} provides a graphical visualization of the fit.
 <<plotex, fig=TRUE>>=
 plot(fit)
 @
+
+\section{Using the Gene Ontology}
+The Gene Ontology
 
 \section{References}
 1. Bauer, Gagneur, Robinson, NAR, 2010.

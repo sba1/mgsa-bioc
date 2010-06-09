@@ -156,15 +156,15 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 #' @param beta
 #' @param p
 #' @param steps defines the number of the MCMC sampler. A recommended value is 1e6 or greater. 
-#' @param restarts defines the number of MCMC restarts. Must be greater or equal to 1.
-#' @param threads defines the number of threads that should be used. A value of 0 means to use all available cores. Default to 0.  
+#' @param restarts defines the number of MCMC restarts. Must be greater or equal to 1. Default to 5.
+#' @param threads defines the number of threads that should be used. A value of 0 means to use all available cores. Default to 0.
 #' 
 #' @references GOing Bayesian: model-based gene set analysis of genome-scale data.
 #' @rdname mgsa
 #'  
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0,  as=integer(0), debug=0){
+		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
 			standardGeneric("mgsa")
 		}
 )
