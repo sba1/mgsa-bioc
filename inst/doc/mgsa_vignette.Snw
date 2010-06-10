@@ -32,8 +32,8 @@ options( width = 80 )
 %%%%%%%% Main text
 
 \section{Introduction}
-Model-based Gene Set Analysis (MGSA, Bauer et al.[1]) is a Bayesian modeling approach for gene set enrichment.
-The package \emph{mgsa} implements MGSA and tools to use MGSA together with the Gene Ontology. 
+Model-based Gene Set Analysis (MGSA, Bauer et al.~\cite{Bauer2010}) is a Bayesian modeling approach for gene set enrichment.
+The package \emph{mgsa} implements MGSA and tools to use MGSA together with the Gene Ontology~\cite{GO2000}. 
 
 \section{Quick start}
 We start with a small simulated dataset which contains \texttt{example\_go}, a random subset of yeast gene ontology annotations with 20 terms and
@@ -43,6 +43,7 @@ In the simulation, the terms GO:0006109 and GO:0030663 were active, implying tha
 <<loadex>>=
 library(mgsa)
 data("example")
+example_go
 example_o
 @
 
@@ -64,8 +65,22 @@ plot(fit)
 @
 
 \section{Using the Gene Ontology}
-The Gene Ontology
+The Gene Ontology~\cite{GO2000}
 
-\section{References}
-1. Bauer, Gagneur, Robinson, NAR, 2010.
+
+\begin{thebibliography}{10}
+
+\bibitem{Bauer2010}
+S. Bauer, J. Gagneur and P. N. Robinson.
+\newblock GOing Bayesian: model-based gene set analysis of genome-scale data.
+\newblock \textit{Nucleic acids research}, 2010.
+
+
+\bibitem{GO2000}
+The Gene Ontology Consortium.
+\newblock Gene Ontology: tool for the unification of biology.
+\newblock \textit{Nature Genetics}, 25:25--29,2000.
+
+\end{thebibliography}
+
 \end{document}

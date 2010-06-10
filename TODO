@@ -7,33 +7,8 @@ Why do we have mgsa(o,...) with o numeric and with o integer? One of them should
 In theory these should be integer, so forcing them to be integer is safer.
 On the other hand, since any integer is a numeric, we can simply offer the numeric signature.
 
-shall we provide 3 (or 5) restarts by default?
-
-
 method for MgsaSets:
-print or show
 length (number of sets)
 subsetting sets?
-we could have MgsaSets that contains "list" and then inherit from lapply, length, automatically.
-we only to replace all @sets into @.Data in the code and have for def: 
-
-setClass(
-        Class="MgsaSets",
-        representation = representation(
-							# maps any item name to an item index
-							itemName2ItemIndex = "integer",
-
-							# total number of items 
-							numberOfItems = "integer",
-
-							# Same order as sets
-							setAnnotations = "data.frame",
-			
-							# Rows are ordered according to item indices and contain the item annotations
-							itemAnnotations = "data.frame"
-			)
-			contains = "list"
-)
-
 
 the method getSubMapping does not correctly populate the slots "setAnnotations" and "itemAnnotations"

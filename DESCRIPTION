@@ -10,4 +10,4 @@ Description: Model-based gene set analysis
 License: GPL (>= 2)
 LazyLoad: yes
 Collate: 'MgsaSets-class.R' 'MgsaGoSets-class.R' 'MgsaResults-class.R'
-    'mgsa-package.R' 'mgsa.R' 'zzz.R'
+    'dottedTable.R' 'mgsa-package.R' 'mgsa.R' 'zzz.R'

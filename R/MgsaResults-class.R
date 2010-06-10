@@ -213,7 +213,6 @@ setMethod(
 #)
 
 
-# TODO: Show mean
 ######## show
 setMethod(
 		"show",

@@ -5,24 +5,24 @@
 #' TODO: Add proper accessor functions and find out how to hide
 #' the raw attributes.
 setClass(
-        Class="MgsaSets",
-        representation = representation(
-							# Sets also have attribute names(). Elements are
-							# just vectors of item indices.
-							sets = "list",
-
-							# maps any item name to an item index
-							itemName2ItemIndex = "integer",
-
-							# total number of items 
-							numberOfItems = "integer",
-
-							# Same order as sets
-							setAnnotations = "data.frame",
-			
-							# Rows are ordered according to item indices and contain the item annotations
-							itemAnnotations = "data.frame"
-			)
+		Class="MgsaSets",
+		representation = representation(
+				# Sets also have attribute names(). Elements are
+				# just vectors of item indices.
+				sets = "list",
+				
+				# maps any item name to an item index
+				itemName2ItemIndex = "integer",
+				
+				# total number of items 
+				numberOfItems = "integer",
+				
+				# Same order as sets
+				setAnnotations = "data.frame",
+				
+				# Rows are ordered according to item indices and contain the item annotations
+				itemAnnotations = "data.frame"
+		)
 )
 
 #' 
@@ -33,79 +33,79 @@ setClass(
 #' @keywords internal
 #' 
 setMethod(f = "initialize",
-		  signature = c("MgsaSets"),
-		  def = function(.Object, ...) {
-						.Object <- callNextMethod()
+		signature = c("MgsaSets"),
+		def = function(.Object, ...) {
+			.Object <- callNextMethod()
+			
+			# Needs numberOfItems to be initialized?
+			if (length(.Object@numberOfItems) == 0)
+			{
+				# Needs itemName2ItemIndex to be initialized?
+				if (length(.Object@itemName2ItemIndex) == 0)
+				{
+					# But do this only, if there is actually a set
+					if (length(.Object@sets) != 0)
+					{
+						sets<-.Object@sets
+						v<-factor(unlist(sets))
 						
-						# Needs numberOfItems to be initialized?
-						if (length(.Object@numberOfItems) == 0)
-						{
-							# Needs itemName2ItemIndex to be initialized?
-							if (length(.Object@itemName2ItemIndex) == 0)
-							{
-								# But do this only, if there is actually a set
-								if (length(.Object@sets) != 0)
-								{
-									sets<-.Object@sets
-									v<-factor(unlist(sets))
-									
-									# extract names
-									names<-as.vector(levels(v))
-
-									# start constructing the map vector
-									itemName2ItemIndex <- 1:length(names)
-
-									# rename
-									levels(v)<-itemName2ItemIndex
-									
-									# relist using old sets as skeleton  
-									sets<-relist(as.integer(v),sets)
-
-									# create map
-									names(itemName2ItemIndex) <- names
-
-									# Assign
-									.Object@sets <- sets
-									.Object@itemName2ItemIndex<-itemName2ItemIndex
-
-									if (length(.Object@itemAnnotations)==0)
-									{
-										.Object@itemAnnotations<-data.frame(row.names=names(itemName2ItemIndex))
-									}
-								}
-							}
-							
-							if (length(.Object@itemName2ItemIndex) != 0)
-							{
-								.Object@numberOfItems <- max(.Object@itemName2ItemIndex)
-							}
-						}
+						# extract names
+						names<-as.vector(levels(v))
 						
-						if (length(.Object@numberOfItems) != 0)
-						{
-							if (any(.Object@itemName2ItemIndex != (1:.Object@numberOfItems)))
-							{
-								stop("Provided itemName2ItemIndex should be equal to 1:numberOfItems for now.");
-							}
-						}
-
-						if (any(duplicated(names(.Object@itemName2ItemIndex))))
-						{
-							stop("Provided itemName2ItemIndex should not contain duplicated names.");
-						}
-
-						if (length(.Object@setAnnotations)==0)
-						{
-							.Object@setAnnotations<-data.frame(row.names=names(.Object@sets))
-						}
-
+						# start constructing the map vector
+						itemName2ItemIndex <- 1:length(names)
+						
+						# rename
+						levels(v)<-itemName2ItemIndex
+						
+						# relist using old sets as skeleton  
+						sets<-relist(as.integer(v),sets)
+						
+						# create map
+						names(itemName2ItemIndex) <- names
+						
+						# Assign
+						.Object@sets <- sets
+						.Object@itemName2ItemIndex<-itemName2ItemIndex
+						
 						if (length(.Object@itemAnnotations)==0)
 						{
-							.Object@itemAnnotations<-data.frame(row.names=names(.Object@itemName2ItemIndex))
+							.Object@itemAnnotations<-data.frame(row.names=names(itemName2ItemIndex))
 						}
-						
-						.Object
-					})
+					}
+				}
+				
+				if (length(.Object@itemName2ItemIndex) != 0)
+				{
+					.Object@numberOfItems <- max(.Object@itemName2ItemIndex)
+				}
+			}
+			
+			if (length(.Object@numberOfItems) != 0)
+			{
+				if (any(.Object@itemName2ItemIndex != (1:.Object@numberOfItems)))
+				{
+					stop("Provided itemName2ItemIndex should be equal to 1:numberOfItems for now.");
+				}
+			}
+			
+			if (any(duplicated(names(.Object@itemName2ItemIndex))))
+			{
+				stop("Provided itemName2ItemIndex should not contain duplicated names.");
+			}
+			
+			if (length(.Object@setAnnotations)==0)
+			{
+				.Object@setAnnotations<-data.frame(row.names=names(.Object@sets))
+			}
+			
+			if (length(.Object@itemAnnotations)==0)
+			{
+				.Object@itemAnnotations<-data.frame(row.names=names(.Object@itemName2ItemIndex))
+			}
+			
+			.Object
+		})
 
 #'
 #' Constructor
@@ -183,6 +183,45 @@ setMethod(
 
 
 #'
+#' show
+#'
+
+setMethod(
+		"show",
+		signature( "MgsaSets" ),
+		function( object ){
+			cat(
+					"Object of class ",
+					class( object ),
+					"\n",
+					length(object@sets),
+					" sets over ",
+					object@numberOfItems,
+					" unique items.\n",
+					sep = ""
+			)
+			
+			cat("\nSet annotations:\n")
+			nrowShow <- min (5 , nrow(object@setAnnotations) )
+			print( dottedTable(object@setAnnotations, nrows=nrowShow) )
+			
+			if(nrowShow < nrow(object@setAnnotations) ){
+				cat("... and ", nrow(object@setAnnotations) - nrowShow, " other sets.\n" )
+			}
+			
+			cat("\nItem annotations:\n")
+			nrowShow <- min (5 , nrow(object@itemAnnotations) )
+			print( dottedTable(object@itemAnnotations, nrows=nrowShow) )
+			
+			if(nrowShow < nrow(object@itemAnnotations) ){
+				cat("... and ", nrow(object@itemAnnotations) - nrowShow, " other items.\n" )
+			}
+			
+		}
+)
+
+
+#'
 #' Returns a subset of mapping, i.e., a mapping, in which only the given
 #' items are assigned to sets. The number of sets of this mapping may also differ.
 #' 
@@ -195,7 +234,7 @@ setMethod(
 		{
 			sets<-mapping@sets
 			subset.contains<-items
-
+			
 			if (T)
 			{
 				encode <- function(x){ match( intersect(x, items), items) }
@@ -226,7 +265,7 @@ setMethod(
 				subitem.sets<-unlist(items.subset,use.names=F)
 				subsets<-split(as.vector(subitem.names.f),subitem.sets)
 			}
-
+			
 			mapping<-new("MgsaSets",sets=subsets)
 			
 			return(mapping)
