@@ -80,6 +80,7 @@ struct parameter_prior
 	/** @brief discrete values */
 	double *values;
 
+	/** @brief length of values */
 	int number_of_values;
 };
 
@@ -92,46 +93,86 @@ struct parameter_prior
  *
  * @param sexp
  * @param discrete defines whether the parameter should be handled as discrete.
+ * @param param_name defines the name of the parameter (used for error messages only)
  * @return
  */
-static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int discrete)
+static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int discrete, char *param_name)
 {
+	int i;
 	struct parameter_prior *p;
 
 	if (!(p = R_alloc(1,sizeof(*p))))
 		return NULL;
 
+	PROTECT(sexp = AS_NUMERIC(sexp));
 	p->number_of_values = LENGTH(sexp);
 
-	if (p->number_of_values == 0)
+	if (discrete)
 	{
-		p->uniform_continuous = 1;
-		p->uniform_continous_lower = 0.0;
-		p->uniform_continous_upper = 1.0;
+		if (p->number_of_values == 0)
+			error("Parameter '%s' has been requested to be discrete but no values were specified");
+
+		if (!(p->values = R_alloc(p->number_of_values,sizeof(p->values[0]))))
+			return NULL;
+
+		for (i=0;i<p->number_of_values;i++)
+		{
+			p->values[i] = REAL(sexp)[i];
+
+			if (isnan(p->values[i]))
+				error("NAs are not supported for parameter '%s'",param_name);
+		}
 	} else
 	{
-		int i;
+		p->uniform_continuous = 1;
 
-		PROTECT(sexp = AS_NUMERIC(sexp));
-
-		if (p->number_of_values == 1 &&  ISNAN(REAL(sexp)[0]))
+		if (p->number_of_values == 0)
 		{
-			p->uniform_continuous = 1;
+			/* Uniform across the full range */
 			p->uniform_continous_lower = 0.0;
 			p->uniform_continous_upper = 1.0;
 		} else
 		{
-			p->uniform_continuous = 0;
+			if (p->number_of_values == 1)
+			{
+				/* The fixed case */
+				p->uniform_continous_lower =  REAL(sexp)[0];
+				p->uniform_continous_upper =  REAL(sexp)[0];
 
-			if (!(p->values = R_alloc(p->number_of_values,sizeof(p->values[0]))))
-				return NULL;
+				/* Special case */
+				if (isnan(p->uniform_continous_lower))
+				{
+					p->uniform_continous_lower = 0.0;
+					p->uniform_continous_upper = 1.0;
+				}
+			} else if (p->number_of_values == 2)
+			{
+				p->uniform_continous_lower =  REAL(sexp)[0];
+				p->uniform_continous_upper =  REAL(sexp)[1];
+			} else
+			{
+				error("Only one continuous range is supported at the moment!");
+			}
 
-			for (i=0;i<p->number_of_values;i++)
-				p->values[i] = REAL(sexp)[i];
+			if (isnan(p->uniform_continous_lower) || isnan(p->uniform_continous_upper))
+				error("NAs are not supported for parameter '%s'",param_name);
+
+			/* Check for validity */
+			if (p->uniform_continous_lower < 0 || p->uniform_continous_upper > 1)
+				error("Range values for '%s' have to be between 0 and 1 (are %f and %f)",param_name,p->uniform_continous_lower,p->uniform_continous_upper);
+
+			/* It is fine if the range is specified in the wrong order */
+			if (p->uniform_continous_lower > p->uniform_continous_upper)
+			{
+				double help;
+				help = p->uniform_continous_upper;
+				p->uniform_continous_upper = p->uniform_continous_lower;
+				p->uniform_continous_lower = help;
+			}
 		}
-
-		UNPROTECT(1);
 	}
+
+	UNPROTECT(1);
 
 	return p;
 }
@@ -1117,11 +1158,11 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 	ndiscrete = LOGICAL(discrete);
 
 	/* Make prior stuff */
-	if (!(alpha_prior = create_parameter_prior_from_R(alpha,ndiscrete[0])))
+	if (!(alpha_prior = create_parameter_prior_from_R(alpha,ndiscrete[0],"alpha")))
 		goto bailout;
-	if (!(beta_prior = create_parameter_prior_from_R(beta,ndiscrete[1])))
+	if (!(beta_prior = create_parameter_prior_from_R(beta,ndiscrete[1],"beta")))
 		goto bailout;
-	if (!(p_prior = create_parameter_prior_from_R(p,ndiscrete[2])))
+	if (!(p_prior = create_parameter_prior_from_R(p,ndiscrete[2],"p")))
 		goto bailout;
 
 	if (nas)
