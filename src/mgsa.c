@@ -91,9 +91,10 @@ struct parameter_prior
  * Uses R_alloc(), so R frees memory after C code has been returned.
  *
  * @param sexp
+ * @param discrete defines whether the parameter should be handled as discrete.
  * @return
  */
-static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp)
+static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int discrete)
 {
 	struct parameter_prior *p;
 
@@ -1002,7 +1003,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 	int *xo,*no,lo;
 	int *nas = NULL, las;
 	int **nsets, *lset, lsets;
-	int *nprior_type;
+	int *ndiscrete;
 	int i,j;
 
 	/* Clear interruption flag */
@@ -1026,7 +1027,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 		error("Parameter 'threads' needs to be atomic!");
 
 	if (LENGTH(discrete) != 3)
-		error("Parameter 'discrete' needs a vector of length 3!");
+		error("Parameter 'discrete' needs to be a vector of length 3!");
 
 	PROTECT(n = AS_INTEGER(n));
 	PROTECT(o = AS_INTEGER(o));
@@ -1107,18 +1108,20 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 			nas[i] =  INTEGER_POINTER(as)[i] - 1;
 			if (nas[i] >= lsets)
 			{
-				error("Parameter 'as' refers to a non-existing set.");
+				error("Parameter 'as' refers to a non-existing set %d.",nas[i]);
 				goto bailout;
 			}
 		}
 	}
 
+	ndiscrete = LOGICAL(discrete);
 
-	if (!(alpha_prior = create_parameter_prior_from_R(alpha)))
+	/* Make prior stuff */
+	if (!(alpha_prior = create_parameter_prior_from_R(alpha,ndiscrete[0])))
 		goto bailout;
-	if (!(beta_prior = create_parameter_prior_from_R(beta)))
+	if (!(beta_prior = create_parameter_prior_from_R(beta,ndiscrete[1])))
 		goto bailout;
-	if (!(p_prior = create_parameter_prior_from_R(p)))
+	if (!(p_prior = create_parameter_prior_from_R(p,ndiscrete[2])))
 		goto bailout;
 
 	if (nas)
