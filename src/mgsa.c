@@ -989,20 +989,21 @@ static void signal_handler(int sig)
  * @param alpha
  * @param beta
  * @param p
- * @param type_of_prior
+ * @param discrete a logical (Boolean) vector which specifies the whether alpha,beta and p are discrete.
  * @param steps
  * @param restarts
  * @param threads
  * @param as (1 based, just indices as o, not that the shape for the return will change in that case).
  * @return
  */
-SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP type_of_prior, SEXP steps, SEXP restarts, SEXP threads, SEXP as)
+SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP discrete, SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
+	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 	int *xo,*no,lo;
 	int *nas = NULL, las;
 	int **nsets, *lset, lsets;
+	int *nprior_type;
 	int i,j;
-	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 
 	/* Clear interruption flag */
 	is_interrupted = 0;
@@ -1031,6 +1032,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP ty
 	PROTECT(restarts = AS_INTEGER(restarts));
 	PROTECT(threads = AS_INTEGER(threads));
 	PROTECT(as = AS_INTEGER(as));
+	PROTECT(discrete = AS_LOGICAL(discrete));
 
 	if (INTEGER_VALUE(restarts) < 1)
 	{
@@ -1051,7 +1053,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP ty
 
 		if (no[i] >= INTEGER_VALUE(n))
 		{
-			error("Observation index to high!");
+			error("Observation index given in o %d exceeds the total number of observations (n=%d)!",no[i],INTEGER_VALUE(n));
 			goto bailout;
 		}
 	}
@@ -1379,7 +1381,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP ty
 	}
 
 bailout:
-	UNPROTECT(7);
+	UNPROTECT(8);
 	return res;
 }
 
