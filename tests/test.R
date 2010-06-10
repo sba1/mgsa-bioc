@@ -32,4 +32,4 @@ mgsa.trampoline.2 <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=c(T,
 	return (res)
 }
 
-r<-mgsa.trampoline.2(which(o==1), sets, length(sets), steps=number.of.steps)
+r<-mgsa.trampoline.2(which(o==1), sets, n, steps=number.of.steps)
