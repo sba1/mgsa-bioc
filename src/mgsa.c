@@ -1025,6 +1025,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 	if (LENGTH(threads) != 1)
 		error("Parameter 'threads' needs to be atomic!");
 
+	if (LENGTH(discrete) != 3)
+		error("Parameter 'discrete' needs a vector of length 3!");
+
 	PROTECT(n = AS_INTEGER(n));
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
