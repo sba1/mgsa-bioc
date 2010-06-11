@@ -212,7 +212,6 @@ static void parameter_prior_sample(struct prior_sample *sample, struct parameter
 		sample->u.discrete_index %= prior->number_of_values;
 
 	}
-
 }
 
 /**
@@ -470,7 +469,7 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 	if (!(cn->max_score_sets_active = (int*)R_alloc(number_of_sets,sizeof(cn->max_score_sets_active[0]))))
 		goto bailout;
 
-	/* Summary related */
+	/* Summary related, default values, some will be overwritten later */
 	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
 	memset(cn->sets_activity_count,0,number_of_sets * sizeof(cn->sets_activity_count[0]));
@@ -480,7 +479,6 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 		goto bailout;
 	if (!(cn->p_summary = new_summary_for_cont_var(0,1,10)))
 		goto bailout;
-
 
 	/* Initially, no set is active, hence all observations that are true are false positives... */
 	cn->n10 = lo;
@@ -1032,13 +1030,19 @@ static void signal_handler(int sig)
  * @param beta
  * @param p
  * @param discrete a logical (Boolean) vector which specifies the whether alpha,beta and p are discrete.
+ * @param alpha_breaks
+ * @param beta_breaks
+ * @param p_breaks
  * @param steps
  * @param restarts
  * @param threads
  * @param as (1 based, just indices as o, not that the shape for the return will change in that case).
  * @return
  */
-SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP discrete, SEXP steps, SEXP restarts, SEXP threads, SEXP as)
+SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
+			SEXP alpha, SEXP beta, SEXP p, SEXP discrete,
+			SEXP alpha_breaks, SEXP beta_breaks, SEXP p_breaks,
+			SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 	int *xo,*no,lo;
@@ -1047,6 +1051,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 	int *ndiscrete;
 	int i,j;
 
+	printf("missing = %d\n",MISSING(alpha_breaks));
 	/* Clear interruption flag */
 	is_interrupted = 0;
 
@@ -1078,6 +1083,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 	PROTECT(threads = AS_INTEGER(threads));
 	PROTECT(as = AS_INTEGER(as));
 	PROTECT(discrete = AS_LOGICAL(discrete));
+	PROTECT(alpha_breaks = AS_NUMERIC(alpha_breaks));
+	PROTECT(beta_breaks = AS_NUMERIC(beta_breaks));
+	PROTECT(p_breaks = AS_NUMERIC(p_breaks));
 
 	if (INTEGER_VALUE(restarts) < 1)
 	{
@@ -1428,7 +1436,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o, SEXP alpha, SEXP beta, SEXP p, SEXP di
 	}
 
 bailout:
-	UNPROTECT(8);
+	UNPROTECT(11);
 	return res;
 }
 
@@ -1464,7 +1472,7 @@ SEXP mgsa_test(void)
 
 
 R_CallMethodDef callMethods[] = {
-   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 10},
+   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 14},
    {"mgsa_test", (DL_FUNC)&mgsa_test, 0},
    {NULL, NULL, 0}
 };

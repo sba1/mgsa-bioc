@@ -27,9 +27,10 @@ o[hidden][false.negatives]  <-  FALSE
 o[!hidden][false.positives]  <-  TRUE
 
 
-mgsa.trampoline.2 <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=c(F,F,F), steps=1e6, restarts=1, threads=0, as=integer(0) ){
-	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete, steps, restarts, threads, as)
+mgsa.trampoline.2 <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=c(F,F,F), alpha.breaks=NA, beta.breaks=NA, p.breaks=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete, alpha.breaks, beta.breaks, p.breaks, steps, restarts, threads, as)
 	return (res)
 }
 
 r<-mgsa.trampoline.2(which(o==1), sets, n, alpha=seq(0,1,length.out=11),discrete=c(T,F,F),steps=number.of.steps)
+show(r)
