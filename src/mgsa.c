@@ -264,14 +264,17 @@ struct summary_for_cont_var *new_summary_for_cont_var(double min, double max, in
 }
 
 /**
- * Adds a new value to a summary.
+ * Adds a new sample for the given summary.
  *
- * @param sum
- * @param val
+ * @param sum the summary container
+ * @param value the actual value
+ * @param param the description
  */
-void add_to_summary(struct summary_for_cont_var *sum, double val)
+void add_to_summary(struct summary_for_cont_var *sum, struct prior_sample *value, struct parameter_prior *pdsc)
 {
 	int slot;
+
+	double val = get_prior_sample_value(value,pdsc);
 
 	val -= sum->min;
 	slot = val * sum->num_of_discrete_values / sum->max;
@@ -368,7 +371,7 @@ struct context
 	/** @brief Array, indicating how much sets lead to the activation of a hidden entry */
 	int *hidden_count;
 
-	/** @brief prior for alpha */
+	/** @brief description of the prior for alpha */
 	struct parameter_prior *alpha_prior;
 
 	/** @brief prior for beta */
@@ -383,7 +386,7 @@ struct context
 	int n10;
 	int n11;
 
-	/* The current parameters */
+	/* The actual values of the parameters */
 	struct prior_sample alpha;
 	struct prior_sample beta;
 	struct prior_sample p;
@@ -845,9 +848,9 @@ static void record_activity(struct context *cn, int64_t step, double score)
 	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		cn->sets_activity_count[cn->set_partition[i]]++;
 
-	add_to_summary(cn->alpha_summary,get_alpha(cn));
-	add_to_summary(cn->beta_summary,get_beta(cn));
-	add_to_summary(cn->p_summary,get_p(cn));
+	add_to_summary(cn->alpha_summary,&cn->alpha,cn->alpha_prior);
+	add_to_summary(cn->beta_summary,&cn->beta,cn->beta_prior);
+	add_to_summary(cn->p_summary,&cn->p,cn->p_prior);
 
 	if (score > cn->max_score)
 	{
@@ -1051,7 +1054,6 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	int *ndiscrete;
 	int i,j;
 
-	printf("missing = %d\n",MISSING(alpha_breaks));
 	/* Clear interruption flag */
 	is_interrupted = 0;
 
