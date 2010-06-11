@@ -1,5 +1,7 @@
 library(mgsa)
 
+set.seed(1)
+
 n  <-  1000
 number.of.sets <- 100
 number.of.steps <- 1e5
@@ -32,5 +34,5 @@ mgsa.trampoline.2 <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=c(F,
 	return (res)
 }
 
-r<-mgsa.trampoline.2(which(o==1), sets, n, alpha=seq(0,1,length.out=11),discrete=c(T,F,F),steps=number.of.steps)
+r<-mgsa.trampoline.2(which(o==1), sets, n, alpha=seq(0,1,length.out=21),discrete=c(T,F,F),steps=number.of.steps)
 show(r)

@@ -81,7 +81,7 @@ struct parameter_prior
 	double *values;
 
 	/** @brief length of values */
-	int number_of_values;
+	int number_of_states;
 };
 
 
@@ -105,17 +105,19 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int disc
 		return NULL;
 
 	PROTECT(sexp = AS_NUMERIC(sexp));
-	p->number_of_values = LENGTH(sexp);
+	p->number_of_states = LENGTH(sexp);
 
 	if (discrete)
 	{
-		if (p->number_of_values == 0)
+		p->uniform_continuous = 0;
+
+		if (p->number_of_states == 0)
 			error("Parameter '%s' has been requested to be discrete but no values were specified");
 
-		if (!(p->values = R_alloc(p->number_of_values,sizeof(p->values[0]))))
+		if (!(p->values = R_alloc(p->number_of_states,sizeof(p->values[0]))))
 			return NULL;
 
-		for (i=0;i<p->number_of_values;i++)
+		for (i=0;i<p->number_of_states;i++)
 		{
 			p->values[i] = REAL(sexp)[i];
 
@@ -126,14 +128,14 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int disc
 	{
 		p->uniform_continuous = 1;
 
-		if (p->number_of_values == 0)
+		if (p->number_of_states == 0)
 		{
 			/* Uniform across the full range */
 			p->uniform_continous_lower = 0.0;
 			p->uniform_continous_upper = 1.0;
 		} else
 		{
-			if (p->number_of_values == 1)
+			if (p->number_of_states == 1)
 			{
 				/* The fixed case */
 				p->uniform_continous_lower =  REAL(sexp)[0];
@@ -145,7 +147,7 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int disc
 					p->uniform_continous_lower = 0.0;
 					p->uniform_continous_upper = 1.0;
 				}
-			} else if (p->number_of_values == 2)
+			} else if (p->number_of_states == 2)
 			{
 				p->uniform_continous_lower =  REAL(sexp)[0];
 				p->uniform_continous_upper =  REAL(sexp)[1];
@@ -208,9 +210,8 @@ static void parameter_prior_sample(struct prior_sample *sample, struct parameter
 		sample->u.continuous_value = rnd;
 	else
 	{
-		sample->u.discrete_index = rnd * prior->number_of_values;
-		sample->u.discrete_index %= prior->number_of_values;
-
+		sample->u.discrete_index = rnd * prior->number_of_states;
+		sample->u.discrete_index %= prior->number_of_states;
 	}
 }
 
@@ -233,10 +234,23 @@ static double get_prior_sample_value(struct prior_sample *sample, struct paramet
 
 struct summary_for_cont_var
 {
-	double min;
-	double max;
+	/** The parameter for which this is a summary */
+	struct parameter_prior *pdsc;
+
+	/** number of values */
 	int num_of_discrete_values;
-	int values[0];
+
+	/** The breaks, length as specified as above */
+	double *breaks;
+
+	/** The actual value counts with same length as breaks */
+	int *values;
+
+	/**
+	 * Maps indices representing a discrete value to a index of values.
+	 * Invalid, if described parameter is continuous
+	 */
+	int *dmap;
 };
 
 /**
@@ -247,6 +261,7 @@ struct summary_for_cont_var
  * @param number_of_discrete_values
  * @return
  */
+#if 0
 struct summary_for_cont_var *new_summary_for_cont_var(double min, double max, int number_of_discrete_values)
 {
 	struct summary_for_cont_var *sum;
@@ -262,6 +277,99 @@ struct summary_for_cont_var *new_summary_for_cont_var(double min, double max, in
 
 	return sum;
 }
+#endif
+
+/**
+ * Allocates memory in sum to hold number_of_breaks breaks. Element
+ * values is initalized while breaks is left uninitialized.
+ *
+ * @param sum
+ * @param number_of_breaks
+ * @return
+ */
+static int init_summary_for_breaks(struct summary_for_cont_var *sum, int number_of_breaks)
+{
+	sum->num_of_discrete_values = number_of_breaks;
+	if (!(sum->values = R_alloc(number_of_breaks,sizeof(sum->values[0]))))
+		return 0;
+	memset(sum->values,0,number_of_breaks * sizeof(sum->values[0]));
+	if (!(sum->breaks = R_alloc(number_of_breaks,sizeof(sum->breaks[0]))))
+		return 0;
+	return 1;
+}
+
+/**
+ * This call creates a new summary description for the given parameter description and the
+ * given breaks.
+ *
+ * @param pdsc
+ * @param breaks
+ * @return
+ */
+static struct summary_for_cont_var *create_summary_for_param_from_R(struct parameter_prior *pdsc, SEXP breaks)
+{
+	int i;
+	int default_range;
+	int number_of_discrete_values;
+	struct summary_for_cont_var *sum;
+
+	if (!(sum = (struct summary_for_cont_var *)R_alloc(1,sizeof(*sum))))
+		error("Couldn't allocate memory for summary statistics");
+	sum->pdsc = pdsc;
+
+	PROTECT((breaks = AS_NUMERIC(breaks)));
+
+	number_of_discrete_values = LENGTH(breaks);
+	if (number_of_discrete_values == 0 || (number_of_discrete_values == 1 && isnan(REAL(breaks)[0])))
+		default_range = 1;
+	else default_range = 0;
+
+	if (pdsc->uniform_continuous)
+	{
+		double min = pdsc->uniform_continous_lower;
+		double max = pdsc->uniform_continous_upper;
+
+		if (default_range)
+			number_of_discrete_values = 11;
+
+		if (!(init_summary_for_breaks(sum,number_of_discrete_values)))
+			error("Couldn't allocate memory!");
+
+		for (i=0;i<number_of_discrete_values;i++)
+			sum->breaks[i] = (max - min) / (double)(number_of_discrete_values - 1) * i;
+	} else
+	{
+		if (!default_range)
+		{
+			/* FIXME: Currently, we don't support values that differ from the real state space */
+			if (number_of_discrete_values != pdsc->number_of_states)
+				error("Number of breaks (%d) must equals the number of discrete states (%d)!",number_of_discrete_values,pdsc->number_of_states);
+
+			for (i=0;i<number_of_discrete_values;i++)
+			{
+				if (REAL(breaks)[i] != sum->pdsc->values[i])
+					error("Breaks must match states of of discrete values!");
+			}
+		}
+
+		number_of_discrete_values = pdsc->number_of_states;
+
+		if (!(init_summary_for_breaks(sum,number_of_discrete_values)))
+			error("Couldn't allocate memory!");
+
+		if (!(sum->dmap = R_alloc(number_of_discrete_values,sizeof(sum->dmap[0]))))
+			error("Couldn't allocate memory!");
+
+		for (i=0;i<number_of_discrete_values;i++)
+		{
+			sum->dmap[i] = i;
+			sum->breaks[i] = (1.0) / (double)(number_of_discrete_values - 1) * i;
+		}
+	}
+
+	UNPROTECT(1);
+	return sum;
+}
 
 /**
  * Adds a new sample for the given summary.
@@ -270,17 +378,22 @@ struct summary_for_cont_var *new_summary_for_cont_var(double min, double max, in
  * @param value the actual value
  * @param param the description
  */
-void add_to_summary(struct summary_for_cont_var *sum, struct prior_sample *value, struct parameter_prior *pdsc)
+void add_to_summary(struct summary_for_cont_var *sum, struct prior_sample *value)
 {
 	int slot;
 
-	double val = get_prior_sample_value(value,pdsc);
+	if (sum->pdsc->uniform_continuous)
+	{
+		double val = get_prior_sample_value(value,sum->pdsc);
 
-	val -= sum->min;
-	slot = val * sum->num_of_discrete_values / sum->max;
-	if (slot < 0) slot=0;
-	if (slot >= sum->num_of_discrete_values) slot = sum->num_of_discrete_values - 1;
-
+		val -= sum->pdsc->uniform_continous_lower;
+		slot = val * sum->num_of_discrete_values / sum->pdsc->uniform_continous_lower;
+		if (slot < 0) slot=0;
+		if (slot >= sum->num_of_discrete_values) slot = sum->num_of_discrete_values - 1;
+	} else
+	{
+		slot = sum->dmap[value->u.discrete_index];
+	}
 	sum->values[slot]++;
 }
 
@@ -297,28 +410,22 @@ static SEXP create_R_representation_of_summary(struct summary_for_cont_var **sum
 {
 	int num_of_discrete_values;
 	int i,j;
-	double w,min,max;
 
 	SEXP l;
 	SEXP l_names;
 	SEXP breaks;
 	SEXP counts;
 
-
 	/* At the moment, we take only the first summary */
 	num_of_discrete_values = sum[0]->num_of_discrete_values;
-	min = sum[0]->min;
-	max = sum[0]->max;
-
-	w = (max - min) / num_of_discrete_values;
-
 	PROTECT(l = allocVector(VECSXP,2));
+
 	PROTECT(l_names = allocVector(STRSXP,2));
 	PROTECT(breaks = allocVector(REALSXP,num_of_discrete_values));
 	PROTECT(counts = allocMatrix(REALSXP,num_of_discrete_values, number_of_summaries));
 
 	for (i=0;i<num_of_discrete_values;i++)
-		REAL(breaks)[i] = min + w*i;
+		REAL(breaks)[i] = sum[0]->breaks[i];
 
 	for (j=0;j<number_of_summaries;j++)
 		for (i=0;i<num_of_discrete_values;i++)
@@ -331,7 +438,6 @@ static SEXP create_R_representation_of_summary(struct summary_for_cont_var **sum
 	setAttrib(l,R_NamesSymbol,l_names);
 
 	UNPROTECT(3);
-
 	return l;
 }
 
@@ -476,13 +582,14 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
 	memset(cn->sets_activity_count,0,number_of_sets * sizeof(cn->sets_activity_count[0]));
+#if 0
 	if (!(cn->alpha_summary = new_summary_for_cont_var(0,1,10)))
 		goto bailout;
 	if (!(cn->beta_summary = new_summary_for_cont_var(0,1,10)))
 		goto bailout;
 	if (!(cn->p_summary = new_summary_for_cont_var(0,1,10)))
 		goto bailout;
-
+#endif
 	/* Initially, no set is active, hence all observations that are true are false positives... */
 	cn->n10 = lo;
 	/* ...while the rest are true negatives */
@@ -848,9 +955,9 @@ static void record_activity(struct context *cn, int64_t step, double score)
 	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		cn->sets_activity_count[cn->set_partition[i]]++;
 
-	add_to_summary(cn->alpha_summary,&cn->alpha,cn->alpha_prior);
-	add_to_summary(cn->beta_summary,&cn->beta,cn->beta_prior);
-	add_to_summary(cn->p_summary,&cn->p,cn->p_prior);
+	add_to_summary(cn->alpha_summary,&cn->alpha);
+	add_to_summary(cn->beta_summary,&cn->beta);
+	add_to_summary(cn->p_summary,&cn->p);
 
 	if (score > cn->max_score)
 	{
@@ -898,7 +1005,9 @@ struct result
  * @param p
  * @param mt pre-seeded structure used for random number generation.
  */
-static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps, struct parameter_prior *alpha_prior, struct parameter_prior *beta_prior, struct parameter_prior *p_prior, struct mt19937p *mt)
+static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps,
+				struct summary_for_cont_var *alpha_summary, struct summary_for_cont_var *beta_summary, struct summary_for_cont_var *p_summary,
+				struct mt19937p *mt)
 {
 	int i;
 	int64_t step;
@@ -933,9 +1042,13 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
 		goto bailout;
 
-	cn.alpha_prior = alpha_prior;
-	cn.beta_prior = beta_prior;
-	cn.p_prior = p_prior;
+	cn.alpha_summary = alpha_summary;
+	cn.beta_summary = beta_summary;
+	cn.p_summary = p_summary;
+
+	cn.alpha_prior = alpha_summary->pdsc;
+	cn.beta_prior = beta_summary->pdsc;
+	cn.p_prior = p_summary->pdsc;
 
 	/* Sample initial state */
 	parameter_prior_sample(&cn.alpha,	cn.alpha_prior, mt);
@@ -1048,6 +1161,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 			SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
+	struct summary_for_cont_var *alpha_summary, *beta_summary, *p_summary;
 	int *xo,*no,lo;
 	int *nas = NULL, las;
 	int **nsets, *lset, lsets;
@@ -1175,6 +1289,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	if (!(p_prior = create_parameter_prior_from_R(p,ndiscrete[2],"p")))
 		goto bailout;
 
+	if (!(alpha_summary = create_summary_for_param_from_R(alpha_prior,alpha_breaks)))
+		goto bailout;
+	if (!(beta_summary = create_summary_for_param_from_R(beta_prior,beta_breaks)))
+		goto bailout;
+	if (!(p_summary = create_summary_for_param_from_R(p_prior,p_breaks)))
+		goto bailout;
+
 	if (nas)
 	{
 		/* Mode 1: Just calculate the score */
@@ -1182,19 +1303,19 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		double score;
 		int i;
 
-		if (!alpha_prior->uniform_continuous && alpha_prior->number_of_values != 1)
+		if (!alpha_prior->uniform_continuous && alpha_prior->number_of_states != 1)
 		{
 			error("Parameter 'alpha' needs to be atomic if 'as' is given.");
 			goto bailout;
 		}
 
-		if (!beta_prior->uniform_continuous && beta_prior->number_of_values != 1)
+		if (!beta_prior->uniform_continuous && beta_prior->number_of_states != 1)
 		{
 			error("Parameter 'beta' needs to be atomic if 'as' is given.");
 			goto bailout;
 		}
 
-		if (!p_prior->uniform_continuous && p_prior->number_of_values != 1)
+		if (!p_prior->uniform_continuous && p_prior->number_of_states != 1)
 		{
 			error("Parameter 'p' needs to be atomic if 'as' is given.");
 			goto bailout;
@@ -1202,6 +1323,10 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 
 		if (!init_context(&cn,nsets,lset,lsets,INTEGER_VALUE(n),no,lo))
 			goto bailout;
+
+		cn.alpha_summary = alpha_summary;
+		cn.beta_summary = beta_summary;
+		cn.p_summary = p_summary;
 
 		cn.alpha_prior = alpha_prior;
 		cn.beta_prior = beta_prior;
@@ -1286,7 +1411,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 			sgenrand(seed, &mt);
 
 			/* Run! */
-			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),alpha_prior,beta_prior,p_prior, &mt);
+			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),alpha_summary,beta_summary,p_summary, &mt);
 
 			if (r[run].marg_set_activity) have_margs = 1;
 			if (r[run].alpha_summary) have_alphas = 1;
