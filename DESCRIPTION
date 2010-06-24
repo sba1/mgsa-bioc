@@ -5,7 +5,8 @@ Title: Model-based gene set analysis
 Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur
     <julien.gagneur@embl.de>
 Maintainer: Sebastian Bauer <Sebastian.Bauer@charite.de>
-Depends: R (>= 2.9.0), methods
+Depends: R (>= 2.9.0), methods, gplots
+Suggests: RSQLite, GO.db
 Description: Model-based gene set analysis
 License: GPL (>= 2)
 LazyLoad: yes

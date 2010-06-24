@@ -3,8 +3,8 @@
 #' 
 #' @keywords internal
 #' 
-mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=c(F,F,F), alpha.breaks=missing, beta.breaks=missing, p.breaks=missing, steps=1e6, restarts=1, threads=0, as=integer(0) ){
-	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete, alpha.breaks, beta.breaks, p.breaks, steps, restarts, threads, as)
+mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), alpha.breaks=missing, beta.breaks=missing, p.breaks=missing, steps=1e6, restarts=1, threads=0, as=integer(0) ){
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete, alpha.breaks, beta.breaks, p.breaks, steps, restarts, threads, as, PACKAGE="mgsa")
 	return (res)
 }
 
@@ -43,11 +43,11 @@ mcmcSummary <- function(x){
 #' 
 #' @keywords internal 
 #' 
-mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
+mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
 {
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
-	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads, as)
+	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, discrete=discrete, steps=steps, restarts=restarts, threads=threads, as)
 	
 	# just return the score (this function is quite overloaded now..., perhaps it would be better to make a separate function)
 	if (length(as) > 0)
@@ -109,7 +109,7 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e6, restart
 #'
 #' @keywords internal
 #' 
-mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
+mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
@@ -135,7 +135,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 		cat(paste("number of sets:",length(sets),"\n"))
 	}
 
-	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads,as,debug))
+	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,discrete,steps,restarts,threads,as,debug))
 }
 
 
@@ -164,7 +164,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1
 #'  
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
+		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
 			standardGeneric("mgsa")
 		}
 )
@@ -177,9 +177,9 @@ setGeneric(
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug)
 		}
 )
 
@@ -187,9 +187,9 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="numeric", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug)
 		}
 )
 
@@ -197,9 +197,9 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug)
 		}
 )
 
@@ -208,9 +208,9 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="logical", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+		def=function( o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug) {
 			if (is.null(population)) population <- 1:length(o)
-			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads, as, debug )
+			mgsa( which(o), sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug )
 		}
 )
 
@@ -218,17 +218,17 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+		def=function( o, sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug) {
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads, as, debug))
+				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, discrete, steps, restarts, threads, as, debug))
 			}
 			else
 			{
 				population<-getItemsIndices(sets,population)
-				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads, as, debug))
+				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, discrete, steps, restarts, threads, as, debug))
 			}
 		}
 )

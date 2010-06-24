@@ -1,13 +1,34 @@
+
+Grid for alpha, beta p:
+------------------------
+
+Julien:
+Alpha, beta and p are numeric vectors of any length both for the discrete and for the continuous case.
+For the continuous case, these (except the last one) define the breaks of the histogram.
+For the discrete case, these (including the last one) define the grid. 
+
+That way we do not have to add further parameters for the histogram.
+
+Fine or too cumbersome?
+alternative?
+
+Seb:
+I think so, at least it is very complicated to specify a continuous range
+then ;)
+
+Julien:
+do you know seq(0,1,length.out=11) ?
+
+
 mgsa(o,...)
 -----------
-
-include "type_of_prior" (logical) to define whether we use a discrete or a continuous prior on the parameters
 
 Why do we have mgsa(o,...) with o numeric and with o integer? One of them should be enough.
 In theory these should be integer, so forcing them to be integer is safer.
 On the other hand, since any integer is a numeric, we can simply offer the numeric signature.
 
 method for MgsaSets:
+------------------
 length (number of sets)
 subsetting sets?
 
