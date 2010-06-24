@@ -3,7 +3,7 @@
 #' 
 #' @keywords internal
 #' 
-mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), alpha.breaks=missing, beta.breaks=missing, p.breaks=missing, steps=1e6, restarts=1, threads=0, as=integer(0) ){
+mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), alpha.breaks=NA, beta.breaks=NA, p.breaks=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
 	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete, alpha.breaks, beta.breaks, p.breaks, steps, restarts, threads, as, PACKAGE="mgsa")
 	return (res)
 }
