@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 \title{The \emph{mgsa} package}
 \author{Sebastian Bauer, Julien Gagneur}
-\date{9 June 2010}
+\date{13 September 2010}
 
 % The is for R CMD check, which finds it in spite of the "%", and also for
 % automatic creation of links in the HTML documentation for the package:
@@ -54,7 +54,7 @@ The call to \texttt{set.seed()}, which sets the seed of the random number genera
 It is not required for \texttt{mgsa()} to work. 
 <<fitex>>=
 set.seed(0)
-fit = mgsa(example_o, example_go, alpha=0.05*(1:10), beta=0.1*(1:8))
+fit = mgsa(example_o, example_go)
 fit
 @
 

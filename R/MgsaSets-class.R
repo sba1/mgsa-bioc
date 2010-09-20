@@ -162,6 +162,15 @@ setMethod(
 		function( sets, names ) sets@setAnnotations[names,]
 )
 
+#'
+#' length defined as number of sets
+#'
+setMethod(
+		"length",
+		signature("MgsaSets"),
+		function(x) length(x@sets)
+)
+
 
 #'
 #' Returns the indices corresponding to the items

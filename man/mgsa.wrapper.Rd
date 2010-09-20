@@ -1,7 +1,8 @@
 \name{mgsa.wrapper}
 \alias{mgsa.wrapper}
 \title{mgsa.wrapper}
-\usage{mgsa.wrapper(o, sets, n, alpha=NA, beta=NA, p=NA, steps=1e+06,
+\usage{mgsa.wrapper(o, sets, n, alpha=0.05 * (1:10), beta=0.1 * (1:8),
+    p=(1:20)/length(sets), discrete=rep(TRUE, 3), steps=1e+06,
     restarts=1, threads=0, as=integer(0), debug=0)}
 \description{Wraps the mgsa.trampoline function. It is dumb with respect to input parameter
 but returns a processed result.}

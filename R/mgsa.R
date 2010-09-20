@@ -3,7 +3,7 @@
 #' 
 #' @keywords internal
 #' 
-mgsa.trampoline <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), alpha.breaks=NA, beta.breaks=NA, p.breaks=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
+mgsa.trampoline <- function(o, sets, n, alpha=c(0.05,0.5), beta=c(0.1,0.8), p=c(1 ,min(20,floor(length(sets)/3)))/length(sets), discrete=rep(FALSE,3), alpha.breaks=NA, beta.breaks=NA, p.breaks=NA, steps=1e6, restarts=1, threads=0, as=integer(0) ){
 	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete, alpha.breaks, beta.breaks, p.breaks, steps, restarts, threads, as, PACKAGE="mgsa")
 	return (res)
 }
@@ -43,7 +43,7 @@ mcmcSummary <- function(x){
 #' 
 #' @keywords internal 
 #' 
-mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
+mgsa.wrapper <- function(o, sets, n, alpha=c(0.05,0.5), beta=c(0.1,0.8), p=c(1 ,min(20,floor(length(sets)/3)))/length(sets), discrete=rep(FALSE,3), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
 {
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
@@ -109,7 +109,7 @@ mgsa.wrapper <- function(o, sets, n, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE
 #'
 #' @keywords internal
 #' 
-mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
+mgsa.main <- function(o, sets, population=NULL, alpha=c(0.05,0.5), beta=c(0.1,0.8), p=c(1 ,min(20,floor(length(sets)/3)))/length(sets), discrete=rep(FALSE,3), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
@@ -164,7 +164,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=NA, beta=NA, p=NA, discret
 #'  
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, alpha=NA, beta=NA, p=NA, discrete=rep(FALSE,3), steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
+		def=function( o, sets, population=NULL, alpha=c(0.05,0.5), beta=c(0.1,0.8), p=c(1 ,min(20,floor(length(sets)/3)))/length(sets), discrete=rep(FALSE,3), steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
 			standardGeneric("mgsa")
 		}
 )
