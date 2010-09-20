@@ -232,7 +232,7 @@ static double get_prior_sample_value(struct prior_sample *sample, struct paramet
 
 /*************************************************************/
 
-struct summary_for_cont_var
+struct summary
 {
 	/** The parameter for which this is a summary */
 	struct parameter_prior *pdsc;
@@ -261,7 +261,7 @@ struct summary_for_cont_var
  * @param number_of_breaks
  * @return
  */
-static int init_summary_for_breaks(struct summary_for_cont_var *sum, int number_of_breaks)
+static int init_summary_for_breaks(struct summary *sum, int number_of_breaks)
 {
 	sum->num_of_discrete_values = number_of_breaks;
 	if (!(sum->values = R_alloc(number_of_breaks,sizeof(sum->values[0]))))
@@ -280,14 +280,14 @@ static int init_summary_for_breaks(struct summary_for_cont_var *sum, int number_
  * @param breaks
  * @return
  */
-static struct summary_for_cont_var *create_summary_for_param_from_R(struct parameter_prior *pdsc, SEXP breaks)
+static struct summary *create_summary_for_param_from_R(struct parameter_prior *pdsc, SEXP breaks)
 {
 	int i;
 	int default_range;
 	int number_of_discrete_values;
-	struct summary_for_cont_var *sum;
+	struct summary *sum;
 
-	if (!(sum = (struct summary_for_cont_var *)R_alloc(1,sizeof(*sum))))
+	if (!(sum = (struct summary *)R_alloc(1,sizeof(*sum))))
 		error("Couldn't allocate memory for summary statistics");
 	memset(sum,0,sizeof(*sum));
 	sum->pdsc = pdsc;
@@ -352,9 +352,9 @@ static struct summary_for_cont_var *create_summary_for_param_from_R(struct param
  * @param sum
  * @return
  */
-static struct summary_for_cont_var *duplicate_summary(struct summary_for_cont_var *sum)
+static struct summary *duplicate_summary(struct summary *sum)
 {
-	struct summary_for_cont_var *new_sum = R_alloc(1,sizeof(*sum));
+	struct summary *new_sum = R_alloc(1,sizeof(*sum));
 	int num_of_discrete_values = sum->num_of_discrete_values;
 
 	if (!new_sum)
@@ -392,7 +392,7 @@ static struct summary_for_cont_var *duplicate_summary(struct summary_for_cont_va
  * @param value the actual value
  * @param param the description
  */
-void add_to_summary(struct summary_for_cont_var *sum, struct prior_sample *value)
+void add_to_summary(struct summary *sum, struct prior_sample *value)
 {
 	int slot;
 
@@ -420,7 +420,7 @@ void add_to_summary(struct summary_for_cont_var *sum, struct prior_sample *value
  *
  * @note you must UNPROTECT one variable, after calling this function.
  */
-static SEXP create_R_representation_of_summary(struct summary_for_cont_var **sum, int number_of_summaries)
+static SEXP create_R_representation_of_summary(struct summary **sum, int number_of_summaries)
 {
 	int num_of_discrete_values;
 	int i,j;
@@ -523,9 +523,9 @@ struct context
 
 	/* The remainder is summary related and updated in record_activity() */
 	uint64_t *sets_activity_count;
-	struct summary_for_cont_var *alpha_summary;
-	struct summary_for_cont_var *beta_summary;
-	struct summary_for_cont_var *p_summary;
+	struct summary *alpha_summary;
+	struct summary *beta_summary;
+	struct summary *p_summary;
 
 	/** @brief represents the max log likelihood encountered so far */
 	double max_score;
@@ -992,9 +992,9 @@ static void record_activity(struct context *cn, int64_t step, double score)
 struct result
 {
 	double *marg_set_activity;
-	struct summary_for_cont_var *alpha_summary;
-	struct summary_for_cont_var *beta_summary;
-	struct summary_for_cont_var *p_summary;
+	struct summary *alpha_summary;
+	struct summary *beta_summary;
+	struct summary *p_summary;
 
 	double max_score;
 	double max_score_alpha;
@@ -1020,7 +1020,7 @@ struct result
  * @param mt pre-seeded structure used for random number generation.
  */
 static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps,
-				struct summary_for_cont_var *alpha_summary, struct summary_for_cont_var *beta_summary, struct summary_for_cont_var *p_summary,
+				struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
 				struct mt19937p *mt)
 {
 	int i;
@@ -1182,7 +1182,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 			SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
-	struct summary_for_cont_var *alpha_summary, *beta_summary, *p_summary;
+	struct summary *alpha_summary, *beta_summary, *p_summary;
 	int *xo,*no,lo;
 	int *nas = NULL, las;
 	int **nsets, *lset, lsets;
@@ -1392,7 +1392,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		int have_margs, have_alphas, have_betas, have_ps;
 		int irestarts = INTEGER_VALUE(restarts);
 
-		struct summary_for_cont_var *summaries[irestarts];
+		struct summary *summaries[irestarts];
 
 		SEXP names;
 
