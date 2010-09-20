@@ -254,32 +254,6 @@ struct summary_for_cont_var
 };
 
 /**
- * Creates the structure needed to summarize a uniform_continuous variable.
- *
- * @param min
- * @param max
- * @param number_of_discrete_values
- * @return
- */
-#if 0
-struct summary_for_cont_var *new_summary_for_cont_var(double min, double max, int number_of_discrete_values)
-{
-	struct summary_for_cont_var *sum;
-
-	sum = (struct summary_for_cont_var *)R_alloc(1,sizeof(*sum) + number_of_discrete_values * sizeof(int));
-	if (sum)
-	{
-		sum->min = min;
-		sum->max = max;
-		sum->num_of_discrete_values = number_of_discrete_values;
-		memset(sum->values,0,number_of_discrete_values * sizeof(int));
-	}
-
-	return sum;
-}
-#endif
-
-/**
  * Allocates memory in sum to hold number_of_breaks breaks. Element
  * values is initalized while breaks is left uninitialized.
  *
@@ -315,6 +289,7 @@ static struct summary_for_cont_var *create_summary_for_param_from_R(struct param
 
 	if (!(sum = (struct summary_for_cont_var *)R_alloc(1,sizeof(*sum))))
 		error("Couldn't allocate memory for summary statistics");
+	memset(sum,0,sizeof(*sum));
 	sum->pdsc = pdsc;
 
 	PROTECT((breaks = AS_NUMERIC(breaks)));
@@ -369,6 +344,45 @@ static struct summary_for_cont_var *create_summary_for_param_from_R(struct param
 
 	UNPROTECT(1);
 	return sum;
+}
+
+/**
+ * Duplicates a given summary. The pdsc is not duplicated.
+ *
+ * @param sum
+ * @return
+ */
+static struct summary_for_cont_var *duplicate_summary(struct summary_for_cont_var *sum)
+{
+	struct summary_for_cont_var *new_sum = R_alloc(1,sizeof(*sum));
+	int num_of_discrete_values = sum->num_of_discrete_values;
+
+	if (!new_sum)
+		return NULL;
+
+	*new_sum = *sum;
+
+	if (sum->breaks)
+	{
+		if (!(new_sum->breaks = (double*)R_alloc(1,sizeof(sum->breaks[0])*num_of_discrete_values)))
+			return NULL;
+		memcpy(new_sum->breaks,sum->breaks,sizeof(sum->breaks[0])*num_of_discrete_values);
+	}
+
+	if (sum->values)
+	{
+		if (!(new_sum->values = (int*)R_alloc(1,sizeof(sum->values[0])*num_of_discrete_values)))
+			return NULL;
+		memcpy(new_sum->values,sum->values,sizeof(sum->values[0])*num_of_discrete_values);
+	}
+
+	if (sum->dmap)
+	{
+		if (!(new_sum->dmap = R_alloc(num_of_discrete_values,sizeof(sum->dmap[0]))))
+			return NULL;
+		memcpy(new_sum->dmap,sum->dmap,sizeof(sum->dmap[0])*num_of_discrete_values);
+	}
+	return new_sum;
 }
 
 /**
@@ -1040,6 +1054,13 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	memset(&res,0,sizeof(res));
 
 	if (!init_context(&cn,sets,sizes_of_sets,number_of_sets,n,o,lo))
+		goto bailout;
+
+	if (!(alpha_summary = duplicate_summary(alpha_summary)))
+		goto bailout;
+	if (!(beta_summary = duplicate_summary(beta_summary)))
+		goto bailout;
+	if (!(p_summary = duplicate_summary(p_summary)))
 		goto bailout;
 
 	cn.alpha_summary = alpha_summary;
