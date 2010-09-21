@@ -205,10 +205,10 @@ static void parameter_prior_sample(struct prior_sample *sample, struct parameter
 {
 	double rnd = genrand(mt);
 
-	/* TODO: Add support for scaling in the continuous case */
 	if (prior->uniform_continuous)
-		sample->u.continuous_value = rnd;
-	else
+	{
+		sample->u.continuous_value = prior->uniform_continous_lower + (rnd - prior->uniform_continous_lower)*(prior->uniform_continous_upper - prior->uniform_continous_lower);
+	} else
 	{
 		sample->u.discrete_index = rnd * prior->number_of_states;
 		sample->u.discrete_index %= prior->number_of_states;
