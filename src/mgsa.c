@@ -401,9 +401,11 @@ void add_to_summary(struct summary *sum, struct prior_sample *value)
 		double val = get_prior_sample_value(value,sum->pdsc);
 
 		val -= sum->pdsc->uniform_continous_lower;
-		slot = val * sum->num_of_discrete_values / (sum->pdsc->uniform_continous_upper - sum->pdsc->uniform_continous_lower);
+		/* Remember that the last slot is reserved */
+		slot = val * (sum->num_of_discrete_values -1) / (sum->pdsc->uniform_continous_upper - sum->pdsc->uniform_continous_lower);
 		if (slot < 0) slot=0;
-		if (slot >= sum->num_of_discrete_values) slot = sum->num_of_discrete_values - 1;
+		if (slot >= sum->num_of_discrete_values)
+			slot = sum->num_of_discrete_values - 1;
 	} else
 	{
 		slot = sum->dmap[value->u.discrete_index];
