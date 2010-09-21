@@ -311,7 +311,7 @@ static struct summary *create_summary_for_param_from_R(struct parameter_prior *p
 			error("Couldn't allocate memory!");
 
 		for (i=0;i<number_of_discrete_values;i++)
-			sum->breaks[i] = (max - min) / (double)(number_of_discrete_values - 1) * i;
+			sum->breaks[i] = min + (max - min) / (double)(number_of_discrete_values - 1) * i;
 	} else
 	{
 		if (!default_range)
