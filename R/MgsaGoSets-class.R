@@ -4,10 +4,8 @@
 #' 
 #' @include MgsaSets-class.R
 
-NULL
-
+#'
 #' Set class for GO terms.
-#' 
 #' Nothing new yet, it comes later
 #' 
 setClass(
@@ -30,7 +28,7 @@ setClass(
 #' @param items a vector of identfiers that are annotated to the term
 #'   in the correspondig positon of the go.ids vector.
 #'
-CreateMgsaGoSets<-function(go.ids,items)
+createMgsaGoSets<-function(go.ids,items)
 {
 	if (length(go.ids) != length(items))
 	{
@@ -41,20 +39,20 @@ CreateMgsaGoSets<-function(go.ids,items)
 	require(RSQLite)
 	
 	# Prepare the data base stuff
-	drv <- RSQLite::dbDriver("SQLite")
+	drv <- DBI::dbDriver("SQLite")
 	annotation.file <- tempfile()
-	annotation.con <- RSQLite::dbConnect(drv, dbname = annotation.file)
-	RSQLite::dbWriteTable(annotation.con,"ga",data.frame(go.id=go.ids,items=items),row.names=0)
+	annotation.con <- DBI::dbConnect(drv, dbname = annotation.file)
+	DBI::dbWriteTable(annotation.con,"ga",data.frame(go.id=go.ids,items=items),row.names=0)
 	
 	# We now attach the GO Database
 	attachSQL = paste("ATTACH '", GO.db::GO_dbfile(), "' AS goDB;", sep = "")
-	RSQLite::dbGetQuery(annotation.con, attachSQL)
+	DBI::dbGetQuery(annotation.con, attachSQL)
 	
 	# We now make our call
 	# Basically, we query terms of which annotated term is a offspring.
 	# All those terms are also annotated to the gene. We union all sub ontologies.
 	# We also need to consider the direct annotations (hence the 4th SELECT statement). 
-	all<-RSQLite::dbGetQuery(annotation.con, paste("SELECT DISTINCT ga.items AS items,go_bp_offspring._id AS id, go2.go_id AS go_id",
+	all<-DBI::dbGetQuery(annotation.con, paste("SELECT DISTINCT ga.items AS items,go_bp_offspring._id AS id, go2.go_id AS go_id",
 					"FROM ga,goDB.go_term,goDB.go_bp_offspring,goDB.go_term as go2",
 					"WHERE ga.go_id = goDB.go_term.go_id AND goDB.go_term._id = goDB.go_bp_offspring._offspring_id AND goDB.go_bp_offspring._id = go2._id",
 					"UNION SELECT DISTINCT ga.items AS items,go_cc_offspring._id AS id, go2.go_id AS go_id",
@@ -66,11 +64,11 @@ CreateMgsaGoSets<-function(go.ids,items)
 					"UNION SELECT DISTINCT ga.items AS items,goDB.go_term._id,goDB.go_term.go_id AS go_id FROM ga,goDB.go_term WHERE ga.go_id = goDB.go_term.go_id"))
 	
 	
-	term.anno.db<-RSQLite::dbGetQuery(annotation.con,"SELECT go_id,term,definition FROM goDB.go_term");
+	term.anno.db<-DBI::dbGetQuery(annotation.con,"SELECT go_id,term,definition FROM goDB.go_term");
 	
 	# Cleanup
-	RSQLite::dbGetQuery(annotation.con, "DETACH goDB" )
-	RSQLite::dbDisconnect(annotation.con)
+	DBI::dbGetQuery(annotation.con, "DETACH goDB" )
+	DBI::dbDisconnect(annotation.con)
 	unlink(annotation.file)
 	
 	# Map to unique gene ids
@@ -96,7 +94,7 @@ CreateMgsaGoSets<-function(go.ids,items)
 #'
 #' TODO:  provide support for evidence codes, choose a better name
 #'
-CreateMgsaGoSetsFromGAF<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7, name.col = 10)
+createMgsaGoSetsFromGAF<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7, name.col = 10)
 {
 	goa = read.delim(gzfile(filename), na.strings = "", header=FALSE, comment.char = "!", sep="\t")
 	
@@ -109,7 +107,7 @@ CreateMgsaGoSetsFromGAF<-function(filename, gene.id.col = 3, go.id.col = 5, evid
 			)
 	)
 	
-	sets<-CreateMgsaGoSets(go.ids=goa$go.ids,items=goa$gene.ids)
+	sets<-createMgsaGoSets(go.ids=goa$go.ids,items=goa$gene.ids)
 	item.annot <- unique(goa[, c("gene.ids", "name")])
 	
 	if (any(duplicated(item.annot$gene.ids))) stop("At least one DB object ID has multiple DB object names in gene ontology annotation file.")

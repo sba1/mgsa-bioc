@@ -4,12 +4,13 @@ dottedString <- function(x, width=20){
 }
 
 dottedTable <- function(tab, nrows=5 , ncols=2, width=20 ){
-	nrowShow <- min(nrows, nrow(tab))
-	ncolShow <- min(ncols, ncol(tab))
-	x <- tab[1:nrowShow,1:ncolShow,drop=FALSE]
-	for(i in 1:ncol(x)) x[[i]] <- dottedString( as.character(x[[i]]), width=width )
+	x <- tab
+	if(nrows <  nrow(tab) ) x <- x[1:nrows,,drop=FALSE]
+	if(ncols <  ncol(tab) ) x <- x[,1:ncols,drop=FALSE]
+	
+	for(i in seq(along=x)) x[[i]] <- dottedString( as.character(x[[i]]), width=width )
 	if(ncol(tab)>ncols){
-		x[[i+1]] <- rep("",nrowShow)
+		x[[i+1]] <- rep("",nrow(x))
 		colnames(x)[i+1] <- "..."
 	}
 	x

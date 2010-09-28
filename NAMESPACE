@@ -21,6 +21,6 @@ exportMethods(
               )
 
 export(
-       "CreateMgsaGoSets",
-       "CreateMgsaGoSetsFromGAF"
+       "createMgsaGoSets",
+       "createMgsaGoSetsFromGAF"
       )

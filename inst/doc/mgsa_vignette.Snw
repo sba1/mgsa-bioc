@@ -65,7 +65,42 @@ plot(fit)
 @
 
 \section{Using the Gene Ontology}
-The Gene Ontology~\cite{GO2000}
+The Gene Ontology~\cite{GO2000} (GO) provides structured annotations to genes.
+Genes with the same annotation consitute a gene set. MGSA can be run on these gene sets.
+GO annotation files for your organism of study can be downloaded at the GO web page:
+http://www.geneontology.org.
+
+The function \texttt{createMgsaGoSetsFromGAF} creates an \texttt{MgsaGoSets} object, a particular \texttt{MgsaSets}, from such a gene annotation file.
+Note that \texttt{createMgsaGoSetsFromGAF} requires the package \texttt{GO.db} and \texttt{RSQLite} to be installed.
+
+For illustration purposes, a simplified GO annotation file with only three yeast genes is provided:
+
+<<readGAF>>=
+createMgsaGoSetsFromGAF(
+	system.file(
+		"example_files/gene_association_head.sgd",
+		package="mgsa"
+	)
+)
+@     
+
+\section{Using custom gene sets}
+MGSA is not restricted to Gene Ontology and ba applied to any gene sets.
+The method \texttt{mgsa} can directly be called on such gene sets provided as \texttt{list} as in the example below.
+<<mgsa_custom_set>>=
+mgsa( c("A", "B"), list(set1=LETTERS[1:3], set2=LETTERS[2:5]) ) 
+@
+
+Internally, the method \texttt{mgsa} indexes all elements of the sets before fitting the model.
+In case \texttt{mgsa} must be run on several observations with the same gene sets, computations can be speeded up by performing this indexing once for all.
+This can be achieved by building a \texttt{MgsaSets}.
+
+<<mgsa_custom_set>>=
+myset = MgsaSets( list(set1=LETTERS[1:3], set2=LETTERS[2:5]) )
+mgsa(c("A", "B"), myset)
+mgsa(c("B", "C"), myset)
+@
+
 
 
 \begin{thebibliography}{10}
