@@ -54,7 +54,7 @@ void *ts_R_alloc(size_t n, int size)
 {
 	void *mem;
 
-	#pragma omp critical
+#pragma omp critical
 	{
 		mem = R_alloc(n,size);
 	}
@@ -314,6 +314,14 @@ static struct summary *create_summary_for_param_from_R(struct parameter_prior *p
 			sum->breaks[i] = min + (max - min) / (double)(number_of_discrete_values - 1) * i;
 	} else
 	{
+		number_of_discrete_values = pdsc->number_of_states;
+
+		if (!(init_summary_for_breaks(sum,number_of_discrete_values)))
+			error("Couldn't allocate memory!");
+
+		if (!(sum->dmap = R_alloc(number_of_discrete_values,sizeof(sum->dmap[0]))))
+			error("Couldn't allocate memory!");
+
 		if (!default_range)
 		{
 			/* FIXME: Currently, we don't support values that differ from the real state space */
@@ -324,21 +332,17 @@ static struct summary *create_summary_for_param_from_R(struct parameter_prior *p
 			{
 				if (REAL(breaks)[i] != sum->pdsc->values[i])
 					error("Breaks must match states of of discrete values!");
+				/*JG-added code*/
+				sum->dmap[i] = i;
+				sum->breaks[i] = REAL(breaks)[i];
 			}
-		}
+		}else{
 
-		number_of_discrete_values = pdsc->number_of_states;
-
-		if (!(init_summary_for_breaks(sum,number_of_discrete_values)))
-			error("Couldn't allocate memory!");
-
-		if (!(sum->dmap = R_alloc(number_of_discrete_values,sizeof(sum->dmap[0]))))
-			error("Couldn't allocate memory!");
-
-		for (i=0;i<number_of_discrete_values;i++)
-		{
-			sum->dmap[i] = i;
-			sum->breaks[i] = (1.0) / (double)(number_of_discrete_values - 1) * i;
+			for (i=0;i<number_of_discrete_values;i++)
+			{
+				sum->dmap[i] = i;
+				sum->breaks[i] = (1.0) / (double)(number_of_discrete_values - 1) * i;
+			}
 		}
 	}
 
@@ -558,7 +562,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 {
 	int i;
 #ifdef DEBUG
-printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
+	printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 #endif
 
 	cn->number_of_sets = number_of_sets;
@@ -617,7 +621,7 @@ printf("init_context(number_of_sets=%d,n=%d,lo=%d)\n",number_of_sets,n,lo);
 
 	return 1;
 
-bailout:
+	bailout:
 	return 0;
 }
 
@@ -950,9 +954,9 @@ static void undo_proposal(struct context *cn)
 	{
 		switch (cn->proposal_which_parameter_changed)
 		{
-			case	0: cn->alpha = cn->old_alpha; break;
-			case	1: cn->beta = cn->old_beta; break;
-			default: cn->p = cn->old_p; break;
+		case	0: cn->alpha = cn->old_alpha; break;
+		case	1: cn->beta = cn->old_beta; break;
+		default: cn->p = cn->old_p; break;
 		}
 	}
 }
@@ -1022,8 +1026,8 @@ struct result
  * @param mt pre-seeded structure used for random number generation.
  */
 static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps,
-				struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
-				struct mt19937p *mt)
+		struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
+		struct mt19937p *mt)
 {
 	int i;
 	int64_t step;
@@ -1145,7 +1149,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	res.max_score_p = cn.max_score_p;
 	res.max_score_sets_active = cn.max_score_sets_active;
 	res.max_score_sets_active_length = cn.max_score_sets_active_length;
-bailout:
+	bailout:
 	return res;
 }
 
@@ -1179,9 +1183,9 @@ static void signal_handler(int sig)
  * @return
  */
 SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
-			SEXP alpha, SEXP beta, SEXP p, SEXP discrete,
-			SEXP alpha_breaks, SEXP beta_breaks, SEXP p_breaks,
-			SEXP steps, SEXP restarts, SEXP threads, SEXP as)
+		SEXP alpha, SEXP beta, SEXP p, SEXP discrete,
+		SEXP alpha_breaks, SEXP beta_breaks, SEXP p_breaks,
+		SEXP steps, SEXP restarts, SEXP threads, SEXP as)
 {
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 	struct summary *alpha_summary, *beta_summary, *p_summary;
@@ -1420,13 +1424,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		}
 #endif
 
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (run=0;run<irestarts;run++)
 		{
 			struct mt19937p mt;
 			unsigned long seed;
 
-			#pragma omp critical
+#pragma omp critical
 			{
 				seed = (unif_rand() * (double)(INT32_MAX));
 			}
@@ -1585,7 +1589,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		UNPROTECT(2);
 	}
 
-bailout:
+	bailout:
 	UNPROTECT(11);
 	return res;
 }
@@ -1622,9 +1626,9 @@ SEXP mgsa_test(void)
 
 
 R_CallMethodDef callMethods[] = {
-   {"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 14},
-   {"mgsa_test", (DL_FUNC)&mgsa_test, 0},
-   {NULL, NULL, 0}
+		{"mgsa_mcmc", (DL_FUNC)&mgsa_mcmc, 14},
+		{"mgsa_test", (DL_FUNC)&mgsa_test, 0},
+		{NULL, NULL, 0}
 };
 
 /**
@@ -1634,7 +1638,7 @@ R_CallMethodDef callMethods[] = {
  */
 void R_init_myLib(DllInfo *info)
 {
-   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
+	R_registerRoutines(info, NULL, callMethods, NULL, NULL);
 }
 
 /**
@@ -1644,7 +1648,7 @@ void R_init_myLib(DllInfo *info)
  */
 void R_unload_mylib(DllInfo *info)
 {
-  /* Release resources. */
+	/* Release resources. */
 }
 
 #ifdef STANDALONE
