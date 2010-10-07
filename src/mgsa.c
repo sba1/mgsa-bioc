@@ -196,8 +196,8 @@ struct prior_sample
  * Samples from the given parameter prior.
  *
  * @param sample holds the sample
- * @param prior
- * @param mt
+ * @param prior from which prior to sample
+ * @param mt source for randomness
  *
  * @returns an opaque sample
  */
@@ -247,15 +247,16 @@ struct summary
 	int *values;
 
 	/**
-	 * Maps indices representing a discrete value to a index of values.
-	 * Invalid, if described parameter is continuous
+	 * Maps indices of the values field of pdsc to the corresponding
+	 * index in this values. Invalid, if the described parameter
+	 * is continuous.
 	 */
 	int *dmap;
 };
 
 /**
  * Allocates memory in sum to hold number_of_breaks breaks. Element
- * values is initalized while breaks is left uninitialized.
+ * values is initialized while breaks is left uninitialized.
  *
  * @param sum
  * @param number_of_breaks
@@ -324,7 +325,10 @@ static struct summary *create_summary_for_param_from_R(struct parameter_prior *p
 
 		if (!default_range)
 		{
-			/* FIXME: Currently, we don't support values that differ from the real state space */
+			/* A custom range was specified.
+			 *
+			 * FIXME: Currently, we don't support values that differ from the real state space
+			 */
 			if (number_of_discrete_values != pdsc->number_of_states)
 				error("Number of breaks (%d) must equals the number of discrete states (%d)!",number_of_discrete_values,pdsc->number_of_states);
 
@@ -332,12 +336,13 @@ static struct summary *create_summary_for_param_from_R(struct parameter_prior *p
 			{
 				if (REAL(breaks)[i] != sum->pdsc->values[i])
 					error("Breaks must match states of of discrete values!");
-				/*JG-added code*/
+
+				/* Transfer custom range. Indices map in 1:1 fashion (see FIXME above). */
 				sum->dmap[i] = i;
 				sum->breaks[i] = REAL(breaks)[i];
 			}
-		}else{
-
+		} else
+		{
 			for (i=0;i<number_of_discrete_values;i++)
 			{
 				sum->dmap[i] = i;
@@ -1169,13 +1174,13 @@ static void signal_handler(int sig)
  * @param sets (1 based)
  * @param n the number of observable entities.
  * @param o (1 based, just the indices)
- * @param alpha
- * @param beta
- * @param p
+ * @param alpha domain of the alpha parameter
+ * @param beta domain of the beta parameter
+ * @param p domain of the p parameter
  * @param discrete a logical (Boolean) vector which specifies the whether alpha,beta and p are discrete.
- * @param alpha_breaks
- * @param beta_breaks
- * @param p_breaks
+ * @param alpha_breaks breaks used for summary. Depending on type of alpha, certain restrictions apply.
+ * @param beta_breaks breaks used for summary. Depending on type of beta, certain restrictions apply.
+ * @param p_breaks  breaks used for summary.  Depending on type of p, certain restrictions apply.
  * @param steps
  * @param restarts
  * @param threads
