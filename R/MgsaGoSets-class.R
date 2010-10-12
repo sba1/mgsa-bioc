@@ -1,13 +1,15 @@
-#'
-#' In this file, we define the MgsaGoSets class and some functions to
-#' create usable objects from it.
-#' 
+#
+# In this file, we define the MgsaGoSets class and some functions to
+# create usable objects from it.
+# 
 #' @include MgsaSets-class.R
+NULL
 
-#'
-#' Set class for GO terms.
-#' Nothing new yet, it comes later
-#' 
+######## Class definitions
+#### MgsaGoSets
+
+#' This class represents Gene Ontology annotations
+#' @exportClass MgsaGoSets
 setClass(
 		"MgsaGoSets",
 		contains = c("MgsaSets"),
@@ -24,10 +26,11 @@ setClass(
 #' item is annotated to a term then it will be also annotated to more general
 #' terms (some people prefer to say that just the transitive colsure is calculated).
 #'
-#' @param go.ids a vector of go ids (GO:00001234)
-#' @param items a vector of identfiers that are annotated to the term
-#'   in the correspondig positon of the go.ids vector.
-#'
+#' @param go.ids a character vector of GO ids (GO:00001234)
+#' @param items a vector of identifiers that are annotated to the term
+#'   in the corresponding position of the go.ids vector.
+#' @nord
+
 createMgsaGoSets<-function(go.ids,items)
 {
 	if (length(go.ids) != length(items))
@@ -93,7 +96,8 @@ createMgsaGoSets<-function(go.ids,items)
 #' format. The file specified by the filename may be gzip-compressed.
 #'
 #' TODO:  provide support for evidence codes, choose a better name
-#'
+#' @export createMgsaGoSetsFromGAF 
+
 createMgsaGoSetsFromGAF<-function(filename, gene.id.col = 3, go.id.col = 5, evidence.col =  7, name.col = 10)
 {
 	goa = read.delim(gzfile(filename), na.strings = "", header=FALSE, comment.char = "!", sep="\t")

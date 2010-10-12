@@ -1,26 +1,28 @@
-useDynLib(mgsa)
+exportClasses(MgsaGoSets)
+export(createMgsaGoSetsFromGAF)
+exportClasses(MgsaResults)
+exportMethods(populationSize)
+exportMethods(studySetSizeInPopulation)
+exportMethods(alphaPost)
+exportMethods(betaPost)
+exportMethods(pPost)
+exportMethods(setsResults)
+exportClasses(MgsaMcmcResults)
+exportMethods(steps)
+exportMethods(restarts)
+exportMethods(alphaMcmcPost)
+exportMethods(betaMcmcPost)
+exportMethods(pMcmcPost)
+exportMethods(show)
 importFrom(graphics, plot)
-
-exportClasses(
-              "MgsaSets",
-              "MgsaGoSets",
-              "MgsaResults"
-              )
-
-exportMethods(
-              "getItemsIndices", 
-              "getSubMapping",
-              "mgsa",
-              "MgsaSets",
-              "setsResults",
-              "alphaPost",
-              "betaPost",
-              "pPost",
-              "plot",
-              "show"
-              )
-
-export(
-       "createMgsaGoSets",
-       "createMgsaGoSetsFromGAF"
-      )
+exportMethods(plot)
+exportClasses(MgsaSets)
+exportMethods(initialize)
+exportMethods(MgsaSets)
+exportMethods(getItemAnnotations)
+exportMethods(getSetAnnotations)
+exportMethods(length)
+exportMethods(getItemsIndices)
+exportMethods(getSubMapping)
+useDynLib(mgsa)
+exportMethods(mgsa)

@@ -1,9 +1,11 @@
+#' @include dottedTable.R
+NULL
 
 #' Class that describes sets and their associations
 #' The attributes of this class are completely private.
 #' 
-#' TODO: Add proper accessor functions and find out how to hide
-#' the raw attributes.
+#' @exportClass MgsaSets
+
 setClass(
 		Class="MgsaSets",
 		representation = representation(
@@ -26,12 +28,11 @@ setClass(
 )
 
 #' 
-#' Initialization
-#' 
-#' This intializes the mapping when some of the parameter are not specified
+#' Initializes the mapping when some parameters are not specified
 #' 
 #' @keywords internal
-#' 
+#' @exportMethod initialize
+
 setMethod(f = "initialize",
 		signature = c("MgsaSets"),
 		def = function(.Object, ...) {
@@ -108,15 +109,13 @@ setMethod(f = "initialize",
 		})
 
 #'
-#' Constructor
+#' Constructs an instance of class MgsaSet.#' 
 #' 
+#' @param sets 
+#' @exportMethod MgsaSets
 setGeneric("MgsaSets", function(sets) standardGeneric("MgsaSets"))
 
-#'
-#' Constructs an instance of class MgsaSet.
-#' 
 #' @param sets a list in which each entry corresponds to a set
-#' 
 setMethod(
 		f="MgsaSets",
 		signature("list"),
@@ -124,14 +123,14 @@ setMethod(
 )
 
 
-setGeneric( "getItemAnnotations", function(sets,items) standardGeneric( "getItemAnnotations" ) )
-
 #'
-#' Returns the annotations of the given items.
+#' The annotations of the given items
 #' 
 #' @param sets an instance of class \code{\linkS4class{MgsaSets}}
 #' @param items an optional vector specifying the items of interest.
-#'
+#' @exportMethod getItemAnnotations
+setGeneric( "getItemAnnotations", function(sets,items) standardGeneric( "getItemAnnotations" ) )
+
 setMethod(
 		f="getItemAnnotations",
 		signature( "MgsaSets", "missing" ),
@@ -145,9 +144,8 @@ setMethod(
 )
 
 #'
-#' Returns the set annotations
-#'
-
+#' The set annotations
+#' @exportMethod getSetAnnotations
 setGeneric( "getSetAnnotations", function(sets,names) standardGeneric( "getSetAnnotations" ) )
 
 setMethod(
@@ -164,7 +162,8 @@ setMethod(
 
 #'
 #' length defined as number of sets
-#'
+#' @exportMethod length
+
 setMethod(
 		"length",
 		signature("MgsaSets"),
@@ -175,6 +174,8 @@ setMethod(
 #'
 #' Returns the indices corresponding to the items
 #'
+#' @exportMethod getItemsIndices
+
 setGeneric("getItemsIndices", function(mapping, items) standardGeneric("getItemsIndices"))
 
 setMethod(
@@ -193,7 +194,7 @@ setMethod(
 
 #'
 #' show
-#'
+#' @exportMethod show
 
 setMethod(
 		"show",
@@ -234,6 +235,8 @@ setMethod(
 #' Returns a subset of mapping, i.e., a mapping, in which only the given
 #' items are assigned to sets. The number of sets of this mapping may also differ.
 #' 
+#' @exportMethod getSubMapping
+
 setGeneric("getSubMapping", function(mapping, items) standardGeneric("getSubMapping"))
 
 setMethod(

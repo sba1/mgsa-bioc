@@ -8,13 +8,11 @@
 #' Note that representation is subject to change. Use the appropriate
 #' accessor function to access the attributes/slots.
 #' 
-#' Here are some internal details of the current implementation.
-#'  
 #' Attributes alphaPost, betaPost, and pPost are data frames, of which the first column
 #' represents a realization value, and subsequent columns the posterior probabilities of
 #' each MCMC run for that realization.
 #' 
-#' Attribute setsResults is a dataFrame in which the first columns represent the marginal
+#' Attribute setsResults is a \code{data.frame} in which the first columns represent the marginal
 #' posteriors of each set. The last two hold, for each set, the counts.
 #' 
 #' The current representation is tightly coupled to an MCMC solver, which may
@@ -30,6 +28,8 @@
 #' \code{\link{betaPost}}
 #' \code{\link{pPost}}
 #' 
+#' @exportClass MgsaResults
+#' @rdname MgsaResults
 
 setClass(
 		"MgsaResults",
@@ -43,11 +43,13 @@ setClass(
 
 ### populationSize
 
+#' @exportMethod populationSize
 setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
 
 #' 
-#' Returns the size of the population of which the analysis was run.
-#' 
+#' The size of the population of which the analysis was run.
+#' @param x an MgsaResults object
+#' @rdname MgsaResults 
 setMethod(
 		"populationSize",
 		signature( "MgsaResults" ),
@@ -55,12 +57,13 @@ setMethod(
 )
 
 ### studySetSizeInPopulation
-
+#' @exportMethod studySetSizeInPopulation
 setGeneric( "studySetSizeInPopulation", function(x) standardGeneric( "studySetSizeInPopulation" ) )
 
 #'
-#' Returns the size of the study set of which the analysis was run.
+#' The size of the study set of which the analysis was run.
 #' 
+#' @rdname MgsaResults
 setMethod(
 		"studySetSizeInPopulation",
 		signature( "MgsaResults" ),
@@ -69,9 +72,10 @@ setMethod(
 
 
 ### alphaPost
-
+#' @exportMethod alphaPost
 setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"alphaPost",
 		signature( "MgsaResults" ),
@@ -79,9 +83,10 @@ setMethod(
 )
 
 ### betaPost
-
+#' @exportMethod betaPost
 setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"betaPost",
 		signature( "MgsaResults" ),
@@ -89,9 +94,10 @@ setMethod(
 )
 
 ### pPost
-
+#' @exportMethod pPost
 setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"pPost",
 		signature( "MgsaResults" ),
@@ -99,9 +105,10 @@ setMethod(
 )
 
 ### setsResults
-
+#' @exportMethod setsResults
 setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"setsResults",
 		signature( "MgsaResults" ),
@@ -120,6 +127,8 @@ setMethod(
 #'  \code{\link{betaMcmcPost}}
 #'  \code{\link{pMcmcPost}}
 #' 
+#' @exportClass MgsaMcmcResults
+#' @rdname MgsaResults
 setClass(
 		"MgsaMcmcResults",
 		contains = c("MgsaResults"),
@@ -131,6 +140,8 @@ setClass(
 )
 
 #### Number of steps
+#' @exportMethod steps
+#' @rdname MgsaResults
 setGeneric( "steps", function(x) standardGeneric( "steps" ) )
 
 setMethod(
@@ -140,8 +151,10 @@ setMethod(
 )
 
 #### Number of restarts
+#' @exportMethod restarts
 setGeneric( "restarts", function(x) standardGeneric( "restarts" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"restarts",
 		signature( "MgsaMcmcResults" ),
@@ -149,8 +162,10 @@ setMethod(
 )
 
 #### alphaMcmcPost
+#' @exportMethod alphaMcmcPost
 setGeneric( "alphaMcmcPost", function(x) standardGeneric( "alphaMcmcPost" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"alphaMcmcPost",
 		signature( "MgsaMcmcResults" ),
@@ -159,8 +174,10 @@ setMethod(
 
 
 #### betaMcmcPost
+#' @exportMethod betaMcmcPost
 setGeneric( "betaMcmcPost", function(x) standardGeneric( "betaMcmcPost" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"betaMcmcPost",
 		signature( "MgsaMcmcResults" ),
@@ -169,8 +186,10 @@ setMethod(
 
 
 #### pMcmcPost
+#' @exportMethod pMcmcPost
 setGeneric( "pMcmcPost", function(x) standardGeneric( "pMcmcPost" ) )
 
+#' @rdname MgsaResults
 setMethod(
 		"pMcmcPost",
 		signature( "MgsaMcmcResults" ),
@@ -178,42 +197,12 @@ setMethod(
 )
 
 
-
-######## Accessors and replacement methods
-## add some only if really needed
-
-
-######### print
-#setMethod(
-#		"print",
-#		signature( "MgsaResults" ),
-#		function( x, ... ){
-#			cat(
-#					"Object of class ",
-#					class( x ),
-#					"\n",
-#					populationSize(x),
-#					" unique elements in population.\n",
-#					studySetSizeInPopulation(x),
-#					" unique elements both in study set and in population.\n",
-#					"The MCMC was run with ",
-#					steps(x),
-#					" steps.\n",
-#					sep = ""
-#			)
-#			cat("\nPosterior on set activity:\n")
-#			print(setsResults(x))
-#			cat("\nPosterior on p:\n")
-#			print(pPost(x))
-#			cat("\nPosterior on alpha:\n")
-#			print(alphaPost(x))
-#			cat("\nPosterior on beta:\n")
-#			print(betaPost(x))
-#		}
-#)
-
-
 ######## show
+#' 
+#' Show method for MgsaResults objects
+#' @param object a \code{\link{MgsaResults}} 
+#' @exportMethod show 
+#' @rdname MgsaResults
 setMethod(
 		"show",
 		signature( "MgsaResults" ),
@@ -240,7 +229,14 @@ setMethod(
 		}
 )
 
+
 ######## plot
+#' 
+#' Plot method for MgsaResults objects
+#' @importFrom graphics plot
+#' @param x a \code{\link{MgsaResults}} 
+#' @exportMethod plot 
+#' @rdname MgsaResults
 setMethod(
 		"plot",
 		signature( "MgsaResults" ),

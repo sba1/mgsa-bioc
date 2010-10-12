@@ -10,6 +10,9 @@ Suggests: RSQLite, GO.db
 Description: Model-based gene set analysis
 License: GPL (>= 2)
 LazyLoad: yes
-Collate: 'MgsaSets-class.R' 'MgsaGoSets-class.R' 'MgsaResults-class.R'
-     'dottedTable.R' 'mgsa-package.R' 'mgsa.R'
-    'zzz.R'
+TODO: Add proper accessor functions and find out how to hide the raw
+    attributes.' 'MgsaSets-class.R' 'dottedTable.R' 'mgsa-package.R'
+    'MgsaSets-class.R Trampoline to jump into the fast C
+    implementation.' 'mgsa.R' 'zzz.R'
+Collate: 'dottedTable.R' 'MgsaSets-class.R' 'MgsaGoSets-class.R'
+    'MgsaResults-class.R' 'mgsa-package.R' 'mgsa.R' 'zzz.R'

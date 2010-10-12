@@ -1,8 +1,12 @@
-#'
+#' @include MgsaResults-class.R
+#' @include MgsaSets-class.R
+NULL
+
 #' Trampoline to jump into the fast C implementation.
 #' 
-#' @keywords internal
-#' 
+#' @nord
+#' @useDynLib mgsa
+
 mgsa.trampoline <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0) ){
 	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete=rep(TRUE,3), alpha.breaks=alpha, beta.breaks=beta, p.breaks=p, steps, restarts, threads, as, PACKAGE="mgsa")
 	return (res)
@@ -14,7 +18,7 @@ mgsa.trampoline <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta
 #'  
 #' @param x specifies a matrix of values with as a many columns as MCMC runs
 #' 
-#' @keywords internal
+#' @nord
 #'
 mcmcSummary <- function(x){
 	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
@@ -42,7 +46,8 @@ mcmcSummary <- function(x){
 #' @return an object of class MgsaMcmcResults.
 #' 
 #' @keywords internal 
-#' 
+#' @nord
+ 
 mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
 {
 	## call to core function on non-empty sets only
@@ -108,7 +113,8 @@ mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=se
 #' @param as define the active sets. No MCMC is run in this case. Just the log likelihood is returned.  
 #'
 #' @keywords internal
-#' 
+#' @nord
+ 
 mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
@@ -140,28 +146,48 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 
 
 ## S4 implementation: generic declaration
-#' 
-#' Performs an Mgsa analysis.
-#' 
-#' Currently, the Mgsa problem is solved using an MCMC sampling algorithm.  
-#' 
-#' @param o The observations. \code{o} can be a \code{numeric}, \code{integer}, \code{character} or \code{logical}.
-#'  If \code{o} is \code{numeric}, \code{integer} or \code{character}, the entries are the items that are observed positive.
-#' If \code{o} is \code{logical}, its codes the observation vector (\code{TRUE} for the items observed positives \code{FALSE} otherwise) .   
-#' @param sets an instance of class MgsaSets. Alternatively, a list of sets can be specified.
-#'        Each set is a vector that contains associated items. The vector can be of any data type,
-#'        for instance, integers or characters.
-#' @param population
-#' @param alpha
-#' @param beta
-#' @param p
-#' @param steps defines the number of the MCMC sampler. A recommended value is 1e6 or greater. 
-#' @param restarts defines the number of MCMC restarts. Must be greater or equal to 1. Default to 5.
-#' @param threads defines the number of threads that should be used. A value of 0 means to use all available cores. Default to 0.
-#' 
-#' @references GOing Bayesian: model-based gene set analysis of genome-scale data.
-#' @rdname mgsa
 #'  
+#' Estimate marginal posterior of the MGSA problem with an MCMC sampling algorithm.  
+#' 
+#' The function can handle items (such as genes) encoded as \code{character} or \code{integer}.
+#' For convenience \code{numeric} items can also be provided but these values should essentially be integers.
+#' The type of items in the observations \code{o}, the \code{sets} and in the optional \code{population} should be consistent. 
+#' In the case of \code{character} items, \code{o} and \code{population} should be of type \code{character} and \code{sets} can either be an \code{\link{MgsaSets}} or a \code{list} of \code{character} vectors.
+#' In the case of \code{integer} items, \code{o} should be of type \code{integer}, \code{numeric} (but essentially with integer values), 
+#' or \code{logical} and entries in \code{sets} as well as the \code{population} should be \code{integer}.
+#' When \code{o} is \code{logical}, it is first coerced to integer with a call on \code{\link{which}}.
+#' Observations outside the \code{population} are not taken into account. If \code{population} is \code{NULL}, it is defined as the union of all sets.
+#' 
+#' Marginal posteriors of activity of each set are estimated using an MCMC sampler as described in Bauer et al., 2010.
+#' Because convergence of an MCM sampler is difficult to assess, it is recommended to run it several times (using \code{restarts}).
+#' If variations between runs are too large (see \code{\link{MgsaResults}}), the number of steps (\code{steps}) of each MCMC run should be increased.
+#' 
+#' @title Performs an MGSA analysis
+#' 
+#' @param o The observations. It can be a \code{numeric}, \code{integer}, \code{character} or \code{logical}. See details. 
+#' @param sets The sets. It can be an \code{\link{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
+#' @param population The total population. Optional. A \code{numeric}, \code{integer} or \code{character} vector.
+#' Default to \code{NULL}. See details.
+#' @param alpha Grid of values for the parameter alpha. \code{numeric}. 
+#' @param beta Grid of values for the parameter beta. \code{numeric}.
+#' @param p Grid of values for the parameter p. \code{numeric}.
+#' @param steps The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater. 
+#' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
+#' @param threads The number of threads that should be used. A value of 0 means to use all available cores. Default to 0.
+#' 
+#' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
+#' @return An \code{\link{MgsaResults}} object.
+#' @usage mgsa(
+#' 				o, sets, population=NULL,
+#' 				alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
+#' 				p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets),
+#' 				steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0
+#' )
+#' @seealso MgsaResults
+#' @exportMethod mgsa
+
+
+
 setGeneric(
 		name="mgsa",
 		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
@@ -169,11 +195,8 @@ setGeneric(
 		}
 )
 
-#' 
-#' Performs an mgsa analysis
-#' 
-#' @param o
-#' 
+# o integer and sets list
+#' @rdname mgsa
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),
@@ -183,7 +206,8 @@ setMethod(
 		}
 )
 
-#' o numeric and sets list
+# o numeric and sets list
+#' @rdname mgsa
 setMethod(
 		f="mgsa",
 		signature = c(o="numeric", sets="list"),
@@ -193,7 +217,8 @@ setMethod(
 		}
 )
 
-#' o character and sets list
+# o character and sets list
+#' @rdname mgsa
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="list"),
@@ -203,8 +228,9 @@ setMethod(
 		}
 )
 
+
+# o logical => coerce to integer with which() and call mgsa()
 #' @rdname mgsa
-#' o logical => coerce to integer with which() and call mgsa()
 setMethod(
 		f="mgsa",
 		signature = c(o="logical", sets="list"),
@@ -214,7 +240,8 @@ setMethod(
 		}
 )
 
-
+# o character and sets MgsaSets
+#' @rdname mgsa
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
@@ -232,22 +259,3 @@ setMethod(
 			}
 		}
 )
-
-#
-# topGO support is optional. It is provided for convenience
-#
-# Hmm...any ideas for doing this in a more elegant fashion?
-# (sets is not required at all here)
-#if (F) # "topGO" %in% installed.packages()[,1])
-#{
-#	library(topGO)
-#	
-#	setMethod(
-#			f="mgsa",
-#			signature = c(o="topGOdata",sets="missing"),
-#			def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
-#				data <- o
-#				mgsa.main(sigGenes(data), genesInTerm(data), population, alpha, beta, p, steps, restarts, threads)
-#			})
-#}
-
