@@ -5,31 +5,26 @@
 #### MgsaResults
 
 #'
-#' Note that representation is subject to change. Use the appropriate
-#' accessor function to access the attributes/slots.
+#' The results of an MGSA analysis.
 #' 
-#' Attributes alphaPost, betaPost, and pPost are data frames, of which the first column
-#' represents a realization value, and subsequent columns the posterior probabilities of
-#' each MCMC run for that realization.
+#' @slot populationSize The number of items in the population. 
+#' @slot studySetSizeInPopulation The number of items both in the study set and in the population.
+#' @slot alphaPost with columns \code{value}, \code{estimate} and \code{std.error}.
+#' @slot betaPost with columns \code{value}, \code{estimate} and \code{std.error}.
+#' @slot pPost with columns \code{value}, \code{estimate} and \code{std.error}.
+#' @slot setsResults with columns \code{inPopulation}, \code{inStudySet}, \code{estimate} and \code{std.error}. 
+#'   
+#' The columns of the slots \code{alphaPost}, \code{betaPost}, and \code{pPost} contains a realization value, its posterior estimate and standard error for the parameters alpha, beta and p respectively.
 #' 
-#' Attribute setsResults is a \code{data.frame} in which the first columns represent the marginal
-#' posteriors of each set. The last two hold, for each set, the counts.
+#' The columns of the slot \code{setsResults} contains the number of items of the set in the population, the numebr of items of the set in the study set, the estimate of its marginal posterior probability and its standard error.
+#' The \code{\link{rownames}} are the names of the sets if available.
 #' 
-#' The current representation is tightly coupled to an MCMC solver, which may
-#' or may not replaced in the future. Therefore, everything is subject to change.
-#' You've been warned!
+#' Accessor methods exist for each slot.
 #' 
+#' @title Results of an MGSA analysis
 #' 
-#'  
-#' @seealso 
-#' \code{\link{populationSize}}
-#' \code{\link{studySetSizeInPopulation}}
-#' \code{\link{alphaPost}}
-#' \code{\link{betaPost}}
-#' \code{\link{pPost}}
-#' 
+#' @seealso mgsa
 #' @exportClass MgsaResults
-#' @rdname MgsaResults
 
 setClass(
 		"MgsaResults",
@@ -46,10 +41,8 @@ setClass(
 #' @exportMethod populationSize
 setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
 
-#' 
 #' The size of the population of which the analysis was run.
 #' @param x an MgsaResults object
-#' @rdname MgsaResults 
 setMethod(
 		"populationSize",
 		signature( "MgsaResults" ),
@@ -60,10 +53,7 @@ setMethod(
 #' @exportMethod studySetSizeInPopulation
 setGeneric( "studySetSizeInPopulation", function(x) standardGeneric( "studySetSizeInPopulation" ) )
 
-#'
 #' The size of the study set of which the analysis was run.
-#' 
-#' @rdname MgsaResults
 setMethod(
 		"studySetSizeInPopulation",
 		signature( "MgsaResults" ),
@@ -75,7 +65,6 @@ setMethod(
 #' @exportMethod alphaPost
 setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
 
-#' @rdname MgsaResults
 setMethod(
 		"alphaPost",
 		signature( "MgsaResults" ),
@@ -86,7 +75,6 @@ setMethod(
 #' @exportMethod betaPost
 setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
 
-#' @rdname MgsaResults
 setMethod(
 		"betaPost",
 		signature( "MgsaResults" ),
@@ -97,7 +85,6 @@ setMethod(
 #' @exportMethod pPost
 setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
 
-#' @rdname MgsaResults
 setMethod(
 		"pPost",
 		signature( "MgsaResults" ),
@@ -120,15 +107,20 @@ setMethod(
 #' Instances of this class are used to hold the additional information 
 #' that was provided by running an MCMC algorithm.
 #' 
-#' @seealso
-#'  \code{\link{steps}}
-#'  \code{\link{restarts}}
-#'  \code{\link{alphaMcmcPost}}
-#'  \code{\link{betaMcmcPost}}
-#'  \code{\link{pMcmcPost}}
+#' @slot steps how many steps per MCMC run
+#' @slot restarts how many MCMC runs
+#' @slot alphaMcmcPost posterior estimates for each MCMC run of the parameter alpha
+#' @slot betaMcmcPost posterior estimates for each MCMC run of the parameter beta
+#' @slot pMcmcPost posterior estimates for each MCMC run of the parameter p
+#' @slot setsMcmcPost posterior estimates for each MCMC run of the sets marginal posterior probabilities
 #' 
+#' The columns of the matrices \code{alphaMcmcPost}, \code{betaMcmcPost}, \code{pMcmcPost} and setsMcmcPost stores the posterior estimates for each individual MCMC run.
+#' The row order matches the one of the slot \code{alphaPost}, \code{betaPost}, \code{pPots}, and \code{setsResults} respectively.
+#'  
+#' Accessor methods exist for each slot.
+#' 
+#' @seealso mgsa
 #' @exportClass MgsaMcmcResults
-#' @rdname MgsaResults
 setClass(
 		"MgsaMcmcResults",
 		contains = c("MgsaResults"),
@@ -194,6 +186,17 @@ setMethod(
 		"pMcmcPost",
 		signature( "MgsaMcmcResults" ),
 		function( x ) x@pMcmcPost
+)
+
+#### setsMcmcPost
+#' @exportMethod setsMcmcPost
+setGeneric( "setsMcmcPost", function(x) standardGeneric( "setsMcmcPost" ) )
+
+#' @rdname MgsaResults
+setMethod(
+		"setsMcmcPost",
+		signature( "MgsaMcmcResults" ),
+		function( x ) x@setsMcmcPost
 )
 
 

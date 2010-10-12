@@ -43,7 +43,7 @@ mcmcSummary <- function(x){
 #'        corresponds to the number of available cores. 
 #' @param specifies the debug level. Mainly for internal use.
 #' 
-#' @return an object of class MgsaMcmcResults.
+#' @return an object of class \code{\link{MgsaMcmcResults}}.
 #' 
 #' @keywords internal 
 #' @nord
@@ -176,14 +176,14 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @param threads The number of threads that should be used. A value of 0 means to use all available cores. Default to 0.
 #' 
 #' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
-#' @return An \code{\link{MgsaResults}} object.
+#' @return An \code{\link{MgsaMcmcResults}} object.
 #' @usage mgsa(
 #' 				o, sets, population=NULL,
 #' 				alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
 #' 				p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets),
 #' 				steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0
 #' )
-#' @seealso MgsaResults
+#' @seealso \code{\link{MgsaResults}}, \code{\link{MgsaMcmcResults}}
 #' @exportMethod mgsa
 
 
