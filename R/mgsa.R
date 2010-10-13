@@ -152,7 +152,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' The function can handle items (such as genes) encoded as \code{character} or \code{integer}.
 #' For convenience \code{numeric} items can also be provided but these values should essentially be integers.
 #' The type of items in the observations \code{o}, the \code{sets} and in the optional \code{population} should be consistent. 
-#' In the case of \code{character} items, \code{o} and \code{population} should be of type \code{character} and \code{sets} can either be an \code{\link{MgsaSets}} or a \code{list} of \code{character} vectors.
+#' In the case of \code{character} items, \code{o} and \code{population} should be of type \code{character} and \code{sets} can either be an \code{\linkS4class{MgsaSets}} or a \code{list} of \code{character} vectors.
 #' In the case of \code{integer} items, \code{o} should be of type \code{integer}, \code{numeric} (but essentially with integer values), 
 #' or \code{logical} and entries in \code{sets} as well as the \code{population} should be \code{integer}.
 #' When \code{o} is \code{logical}, it is first coerced to integer with a call on \code{\link{which}}.
@@ -165,7 +165,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @title Performs an MGSA analysis
 #' 
 #' @param o The observations. It can be a \code{numeric}, \code{integer}, \code{character} or \code{logical}. See details. 
-#' @param sets The sets. It can be an \code{\link{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
+#' @param sets The sets. It can be an \code{\linkS4class{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
 #' @param population The total population. Optional. A \code{numeric}, \code{integer} or \code{character} vector.
 #' Default to \code{NULL}. See details.
 #' @param alpha Grid of values for the parameter alpha. \code{numeric}. 

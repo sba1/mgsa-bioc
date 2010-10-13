@@ -1,9 +1,23 @@
 #' @include dottedTable.R
 NULL
 
-#' Class that describes sets and their associations
-#' The attributes of this class are completely private.
+#'
+#' This class describes sets, items and their annotations.
 #' 
+#' Internally, the method \code{\link{mgsa}} indexes all elements of the sets before fitting the model.
+#' In case \code{\link{mgsa}} must be run on several observations with the same gene sets, computations can be speeded up by performing this indexing once for all.
+#' This can be achieved by building a \code{\linkS4class{MgsaSets}}.
+#' The slots of this class are meant to be private therefore no setter method is provided.
+#' 
+#' The data frames \code{setAnnotations} and \code{itemAnnotations} allow to store annotations. No constraint is imposed on the number and names of their columns. 
+#' 
+#' @slot sets A list whose elements are vector of item indices.
+#' @slot itemName2ItemIndex The mapping of item names to index.
+#' @slot numberOfItems How many items?
+#' @slot setAnnotations Annotations of the sets. The \code{\link{rownames}} are set names. 
+#' @slot itemAnnotations Annotations of the items. The \code{\link{rownames}} are item names.
+#' @title Sets of items and their annotations
+#' @seealso \code{\linkS4class{MgsaGoSets}}, \code{\link{readGAF}}, \code{\link{mgsa}}
 #' @exportClass MgsaSets
 
 setClass(
@@ -31,7 +45,7 @@ setClass(
 #' Initializes the mapping when some parameters are not specified
 #' 
 #' @keywords internal
-#' @exportMethod initialize
+#' @nord
 
 setMethod(f = "initialize",
 		signature = c("MgsaSets"),
@@ -109,7 +123,7 @@ setMethod(f = "initialize",
 		})
 
 #'
-#' Constructs an instance of class MgsaSet.#' 
+#' Constructs an instance of class MgsaSets 
 #' 
 #' @param sets 
 #' @exportMethod MgsaSets
