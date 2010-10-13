@@ -49,7 +49,7 @@ mgsa.go.demo<-function(goa.filename, gene.id.col = 3, go.id.col = 5, evidence.co
 #	Rprof("mgsa_go_demo.Rprof"); 
 
 	goa.filename<-"/home/sba/.ontologizer/workspace/.cache/c5018986_0"
-	mapping<-CreateMgsaGoSetsFromGAF(goa.filename)
+	mapping<-readGAF(goa.filename)
 #	load("mapping.RObj")
 
 	# some flybase genes

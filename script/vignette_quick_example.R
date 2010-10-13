@@ -5,7 +5,7 @@ DATADIR = "/localdata/mgsa"
 ## paper example
 library(mgsa)
 
-go = CreateMgsaGoSetsFromGAF( file.path (DATADIR,"gene_association.sgd"))
+go = readGAF(file.path (DATADIR,"gene_association.sgd"))
 number.of.sets = 10
 set.seed(0)
 rnd =  sample(length(go@sets), number.of.sets)
