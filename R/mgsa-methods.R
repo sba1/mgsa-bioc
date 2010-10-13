@@ -199,9 +199,6 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' plot(fit)
 #' ## End(Not run)
 #' @exportMethod mgsa
-
-
-
 setGeneric(
 		name="mgsa",
 		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=5, threads=0){
@@ -210,7 +207,7 @@ setGeneric(
 )
 
 # o integer and sets list
-#' @rdname mgsa
+#' @rdname mgsa-methods
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),
@@ -221,7 +218,7 @@ setMethod(
 )
 
 # o numeric and sets list
-#' @rdname mgsa
+#' @rdname mgsa-methods
 setMethod(
 		f="mgsa",
 		signature = c(o="numeric", sets="list"),
@@ -232,7 +229,7 @@ setMethod(
 )
 
 # o character and sets list
-#' @rdname mgsa
+#' @rdname mgsa-methods
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="list"),
@@ -244,7 +241,7 @@ setMethod(
 
 
 # o logical => coerce to integer with which() and call mgsa()
-#' @rdname mgsa
+#' @rdname mgsa-methods
 setMethod(
 		f="mgsa",
 		signature = c(o="logical", sets="list"),
@@ -255,7 +252,7 @@ setMethod(
 )
 
 # o character and sets MgsaSets
-#' @rdname mgsa
+#' @rdname mgsa-methods
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
