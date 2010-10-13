@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 \title{The \emph{mgsa} package}
 \author{Sebastian Bauer, Julien Gagneur}
-\date{13 September 2010}
+\date{13 October 2010}
 
 % The is for R CMD check, which finds it in spite of the "%", and also for
 % automatic creation of links in the HTML documentation for the package:
@@ -70,13 +70,13 @@ Genes with the same annotation consitute a gene set. MGSA can be run on these ge
 GO annotation files for your organism of study can be downloaded at the GO web page:
 http://www.geneontology.org.
 
-The function \texttt{createMgsaGoSetsFromGAF} creates an \texttt{MgsaGoSets} object, a particular \texttt{MgsaSets}, from such a gene annotation file.
-Note that \texttt{createMgsaGoSetsFromGAF} requires the package \texttt{GO.db} and \texttt{RSQLite} to be installed.
+The function \texttt{readGAF} creates an \texttt{MgsaGoSets} object, a particular \texttt{MgsaSets}, from such a gene annotation file.
+Note that \texttt{readGAF} requires the package \texttt{GO.db} and \texttt{RSQLite} to be installed.
 
 For illustration purposes, a simplified GO annotation file with only three yeast genes is provided:
 
 <<readGAF>>=
-createMgsaGoSetsFromGAF(
+readGAF(
 	system.file(
 		"example_files/gene_association_head.sgd",
 		package="mgsa"
