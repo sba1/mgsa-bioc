@@ -23,7 +23,7 @@
 #' 
 #' @title Results of an MGSA analysis
 #' 
-#' @seealso mgsa
+#' @seealso \code{\link{mgsa}}
 #' @exportClass MgsaResults
 
 setClass(
@@ -119,7 +119,7 @@ setMethod(
 #'  
 #' Accessor methods exist for each slot.
 #' 
-#' @seealso mgsa
+#' @seealso \code{\link{mgsa}}
 #' @exportClass MgsaMcmcResults
 setClass(
 		"MgsaMcmcResults",

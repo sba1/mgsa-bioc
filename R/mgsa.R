@@ -181,16 +181,30 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' 				o, sets, population=NULL,
 #' 				alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
 #' 				p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets),
-#' 				steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0
+#' 				steps=1e6, restarts=5, threads=0
 #' )
+#' 
 #' @seealso \code{\link{MgsaResults}}, \code{\link{MgsaMcmcResults}}
+#' @examples
+#' ## observing items A and B, with sets {A,B,C} and {B,C,D}
+#' mgsa(c("A", "B"), list(set1 = LETTERS[1:3], set2 = LETTERS[2:4]))
+#' 
+#' ## same case with integer representation of the items and logical observation
+#' mgsa(c(TRUE,TRUE,FALSE,FALSE), list(set1 = 1:3, set2 = 2:4))
+#' 
+#' ## a small example with gene ontology sets and plot 
+#' data(example)
+#' fit = mgsa(example_o, example_go)
+#' ## Not run: 
+#' plot(fit)
+#' ## End(Not run)
 #' @exportMethod mgsa
 
 
 
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=5, threads=0,  as=integer(0), debug=0){
+		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=5, threads=0){
 			standardGeneric("mgsa")
 		}
 )
@@ -200,9 +214,9 @@ setGeneric(
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
 		}
 )
 
@@ -211,9 +225,9 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="numeric", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
 		}
 )
 
@@ -222,9 +236,9 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads)
 		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug)
+			mgsa.main(o, sets, population, alpha, beta, p, steps, restarts, threads)
 		}
 )
 
@@ -234,9 +248,9 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="logical", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
 			if (is.null(population)) population <- 1:length(o)
-			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads, as, debug )
+			mgsa( which(o), sets, population, alpha, beta, p, steps, restarts, threads)
 		}
 )
 
@@ -245,17 +259,17 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
-		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads, as, debug) {
+		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads, as, debug))
+				return(mgsa.wrapper(getItemsIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads))
 			}
 			else
 			{
 				population<-getItemsIndices(sets,population)
-				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads, as, debug))
+				return(mgsa ( getItemsIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads))
 			}
 		}
 )
