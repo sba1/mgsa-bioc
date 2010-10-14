@@ -85,7 +85,7 @@ readGAF(
 @     
 
 \section{Using custom gene sets}
-MGSA is not restricted to Gene Ontology and ba applied to any gene sets.
+MGSA is not restricted to Gene Ontology and can be applied to any gene sets.
 The method \texttt{mgsa} can directly be called on such gene sets provided as \texttt{list} as in the example below.
 <<mgsa_custom_set>>=
 mgsa( c("A", "B"), list(set1=LETTERS[1:3], set2=LETTERS[2:5]) ) 
