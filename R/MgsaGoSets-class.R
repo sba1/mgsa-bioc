@@ -8,10 +8,9 @@ NULL
 ######## Class definitions
 #### MgsaGoSets
 
-#' 
 #' This class represents gene ontology annotations.
 #' 
-#' For the time being, it is identitical to the parental class \code{\linkS4class{MgsaSets}}.
+#' For now, it is identitical to the parental class \code{\linkS4class{MgsaSets}}.
 #' @title Gene Ontology annotations
 #' @seealso \code{\link{readGAF}}
 #' @exportClass MgsaGoSets
@@ -23,7 +22,6 @@ setClass(
 )
 
 
-#'
 #' This functions takes a 1:1 mapping of go.ids to items and returns
 #' a full MgsaGOSets instance. The structure of GO is gathered from GO.db. It
 #' is sufficient to specify just the directly asserted mapping (or annotation), 
@@ -97,7 +95,6 @@ createMgsaGoSets<-function(go.ids,items)
 	return(mapping)
 }
 
-#'
 #' Creates a MgsaGoSets using gene ontology annotations provided by a file in GAF 1.0 or 2.0
 #' format.
 #' 
