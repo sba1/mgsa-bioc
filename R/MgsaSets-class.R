@@ -17,7 +17,9 @@ NULL
 #' @slot setAnnotations Annotations of the sets. The \code{\link{rownames}} are set names. 
 #' @slot itemAnnotations Annotations of the items. The \code{\link{rownames}} are item names.
 #' @title Sets of items and their annotations
-#' @seealso \code{\linkS4class{MgsaGoSets}}, \code{\link{readGAF}}, \code{\link{mgsa}}
+#' @seealso \code{\link[=length-methods]{length}},
+#' \code{\linkS4class{MgsaGoSets}},
+#' \code{\link{readGAF}}, \code{\link{mgsa}}
 #' @exportClass MgsaSets
 
 setClass(
@@ -41,7 +43,7 @@ setClass(
 		)
 )
 
-#' 
+
 #' Initializes the mapping when some parameters are not specified
 #' 
 #' @keywords internal
@@ -122,97 +124,130 @@ setMethod(f = "initialize",
 			.Object
 		})
 
-#'
-#' Constructs an instance of class MgsaSets 
+#' Constructor of the class \code{\linkS4class{MgsaSets}}. 
 #' 
-#' @param sets 
+#' Constructor of the class \code{\linkS4class{MgsaSets}}.
+#' 
+#' @title Constructor of the class MgsaSets
+#' @param sets a \code{list} of vectors.
+#' @return An \code{\linkS4class{MgsaSets}} object.
+#' @usage MgsaSets(sets)
+#' @examples MgsaSets(list(set1=c("a", "b"), set2=c("b", "c")))
+#' @rdname MgsaSets-methods
 #' @exportMethod MgsaSets
 setGeneric("MgsaSets", function(sets) standardGeneric("MgsaSets"))
 
-#' @param sets a list in which each entry corresponds to a set
+#' @rdname MgsaSets-methods
 setMethod(
 		f="MgsaSets",
-		signature("list"),
+		signature=c("list"),
 		function(sets) new("MgsaSets",sets=sets)
 )
 
-
-#'
-#' The annotations of the given items
+#' Get item annotations of a \code{\linkS4class{MgsaSets}}.
 #' 
-#' @param sets an instance of class \code{\linkS4class{MgsaSets}}
-#' @param items an optional vector specifying the items of interest.
+#' @title Get item annotations of a MgsaSets
+#' @param sets an instance of class \code{\linkS4class{MgsaSets}}.
+#' @param items \code{character} an optional vector specifying the items of interest. 
+#' @return a \code{data.frame}: the item annotations.
+#' @usage getItemAnnotations(sets,items)
 #' @exportMethod getItemAnnotations
 setGeneric( "getItemAnnotations", function(sets,items) standardGeneric( "getItemAnnotations" ) )
 
+#' @rdname getItemAnnotations-methods
 setMethod(
 		f="getItemAnnotations",
-		signature( "MgsaSets", "missing" ),
+		signature = c( "MgsaSets", "missing" ),
 		function( sets, items ) sets@itemAnnotations
 )
 
+#' @rdname getItemAnnotations-methods
 setMethod(
-		"getItemAnnotations",
-		signature( "MgsaSets","character" ),
+		f="getItemAnnotations",
+		signature=c( "MgsaSets","character" ),
 		function( sets, items ) sets@itemAnnotations[sets@itemName2ItemIndex[items],]
 )
 
-#'
-#' The set annotations
+#' Get set annotations of a \code{\linkS4class{MgsaSets}}.
+#' 
+#' @title Get set annotations of a MgsaSets
+#' @param sets an instance of class \code{\linkS4class{MgsaSets}}.
+#' @param names \code{character} an optional vector specifying the names of interest. 
+#' @return a \code{data.frame}: the set annotations.
+#' @usage getSetAnnotations(sets,names)
+#' @rdname getSetAnnotations-methods
 #' @exportMethod getSetAnnotations
+
 setGeneric( "getSetAnnotations", function(sets,names) standardGeneric( "getSetAnnotations" ) )
 
+#' @rdname getSetAnnotations-methods
 setMethod(
-		"getSetAnnotations",
-		signature( "MgsaSets", "missing" ),
+		f="getSetAnnotations",
+		signature=c( "MgsaSets", "missing" ),
 		function( sets, names ) sets@setAnnotations
 )
 
+#' @rdname getSetAnnotations-methods
 setMethod(
-		"getSetAnnotations",
-		signature( "MgsaSets", "character" ),
+		f="getSetAnnotations",
+		signature=c( "MgsaSets", "character" ),
 		function( sets, names ) sets@setAnnotations[names,]
 )
 
-#'
-#' length defined as number of sets
+#' Length (number of sets) of \code{\linkS4class{MgsaSets}}.
+#' 
+#' @title Length of a MgsaSets. 
+#' @param x an instance of class \code{\linkS4class{MgsaSets}}.
+#' @return \code{integer} vector. 
+#' @usage length(x)
+#' @rdname length-methods
 #' @exportMethod length
 
 setMethod(
-		"length",
-		signature("MgsaSets"),
+		f="length",
+		signature=c("MgsaSets"),
 		function(x) length(x@sets)
 )
 
 
-#'
 #' Returns the indices corresponding to the items
 #'
+#' @title Get item indices of a MgsaSets
+#' @param sets an instance of class \code{\linkS4class{MgsaSets}}.
+#' @param items \code{character} or \code{numeric} the items of interest. 
+#' @return a \code{integer}: the item indices.
+#' @usage getItemsIndices(mapping, items)
+#' @rdname getItemsIndices-methods
 #' @exportMethod getItemsIndices
 
 setGeneric("getItemsIndices", function(mapping, items) standardGeneric("getItemsIndices"))
 
+#' @rdname getItemsIndices-methods
 setMethod(
-		"getItemsIndices",
-		signature( "MgsaSets","character" ),
+		f="getItemsIndices",
+		signature=c( "MgsaSets","character" ),
+		function( mapping, items ) mapping@itemName2ItemIndex[items]
+)
+
+#' @rdname getItemsIndices-methods
+setMethod(
+		f="getItemsIndices",
+		signature=c( "MgsaSets", "numeric" ),
 		function( mapping, items ) mapping@itemName2ItemIndex[items]
 )
 
 
-setMethod(
-		"getItemsIndices",
-		signature( "MgsaSets", "numeric" ),
-		function( mapping, items ) mapping@itemName2ItemIndex[items]
-)
-
-
+#' Show an \code{\linkS4class{MgsaSets}}.
 #'
-#' show
+#' @title Show an MgsaSets
+#' @param object an instance of class \code{\linkS4class{MgsaSets}}.
+#' @return \code{NULL}
+#' @usage show(object)
 #' @exportMethod show
 
 setMethod(
-		"show",
-		signature( "MgsaSets" ),
+		f="show",
+		signature=c( "MgsaSets" ),
 		function( object ){
 			cat(
 					"Object of class ",
@@ -245,23 +280,30 @@ setMethod(
 )
 
 
-#'
-#' Returns a subset of mapping, i.e., a mapping, in which only the given
-#' items are assigned to sets. The number of sets of this mapping may also differ.
+#' Returns a subset of an \code{\linkS4class{MgsaSets}} in which only the required
+#' items are kept. Empty sets are removed.
 #' 
-#' @exportMethod getSubMapping
+#' @note TODO: do we need that method? Does it work on items or item indexes? 
+#' @title Subset of an MgsaSets
+#' @param sets an \code{\linkS4class{MgsaSets}}.
+#' @param items \code{numeric}. The items to restrict on.
+#' @return an \code{\linkS4class{MgsaSets}}.
+#' @usage subMgsaSets(sets, items)
+#' @rdname subMgsaSets-methods
+#' @exportMethod subMgsaSets
 
-setGeneric("getSubMapping", function(mapping, items) standardGeneric("getSubMapping"))
+setGeneric("subMgsaSets", function(sets, items) standardGeneric("subMgsaSets"))
 
+#' @rdname subMgsaSets-methods
 setMethod(
-		"getSubMapping",
-		signature( "MgsaSets", "numeric" ),
-		function( mapping, items )
+		f="subMgsaSets",
+		signature=c( "MgsaSets", "numeric" ),
+		function( sets, items )
 		{
-			sets<-mapping@sets
+			sets<-sets@sets
 			subset.contains<-items
 			
-			if (T)
+			if (TRUE)
 			{
 				encode <- function(x){ match( intersect(x, items), items) }
 				subsets <- lapply(sets, encode)
@@ -292,7 +334,7 @@ setMethod(
 				subsets<-split(as.vector(subitem.names.f),subitem.sets)
 			}
 			
-			mapping<-new("MgsaSets",sets=subsets)
+			rv<-new("MgsaSets",sets=subsets)
 			
-			return(mapping)
+			return(rv)
 		})
