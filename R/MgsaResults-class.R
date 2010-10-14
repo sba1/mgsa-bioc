@@ -22,7 +22,6 @@
 #' Accessor methods exist for each slot.
 #' 
 #' @title Results of an MGSA analysis
-#' 
 #' @seealso \code{\link{mgsa}}
 #' @exportClass MgsaResults
 
@@ -139,7 +138,7 @@ setMethod(
 #' @exportMethod setsResults
 setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
 
-#' @rdname MgsaResults
+#' @rdname setsResults-method
 setMethod(
 		"setsResults",
 		signature=c( "MgsaResults" ),
@@ -149,7 +148,7 @@ setMethod(
 
 #'
 #' Instances of this class are used to hold the additional information 
-#' that was provided by running an MCMC algorithm.
+#' that was provided by running (possibly multiple times) an MCMC algorithm.
 #' 
 #' @slot steps how many steps per MCMC run
 #' @slot restarts how many MCMC runs
