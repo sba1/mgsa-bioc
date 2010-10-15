@@ -16,7 +16,6 @@
 #' tools to use MGSA together with the Gene Ontology.
 #' 
 #' @name mgsa-package
-#' @aliases mgsa
 #' @docType package
 #' @title Model-based gene set analysis
 #' @author Sebastian Bauer \email{Sebastian.Bauer@@charite.de}, Julien Gagneur \email{julien.gagneur@@embl.de} 

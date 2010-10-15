@@ -41,7 +41,6 @@ setClass(
 #' @title Size of the population of a MgsaResults
 #' @param x a \code{\linkS4class{MgsaResults}}.
 #' @return \code{integer}: the size of the population.
-#' @usage populationSize(x)
 #' @rdname populationSize-methods
 #' @exportMethod populationSize
 setGeneric( "populationSize", function(x) standardGeneric( "populationSize" ) )
@@ -60,7 +59,6 @@ setMethod(
 #' @title Size of the study set of a MgsaResults
 #' @param x a \code{\linkS4class{MgsaResults}}.
 #' @return \code{integer}: the size of the study set.
-#' @usage studySetSizeInPopulation(x)
 #' @rdname studySetSizeInPopulation-methods
 #' @exportMethod studySetSizeInPopulation
 setGeneric( "studySetSizeInPopulation", function(x) standardGeneric( "studySetSizeInPopulation" ) )
@@ -79,7 +77,6 @@ setMethod(
 #' @title Posterior for alpha
 #' @param x a \code{\linkS4class{MgsaResults}}.
 #' @return \code{data.frame}: realization values, posterior estimate and standard error for the parameter alpha.
-#' @usage alphaPost(x)
 #' @rdname alphaPost-methods
 #' @exportMethod alphaPost
 setGeneric( "alphaPost", function(x) standardGeneric( "alphaPost" ) )
@@ -97,7 +94,6 @@ setMethod(
 #' @title Posterior for beta
 #' @param x a \code{\linkS4class{MgsaResults}}.
 #' @return \code{data.frame}: realization values, posterior estimate and standard error for the parameter beta.
-#' @usage betaPost(x)
 #' @rdname betaPost-methods
 #' @exportMethod betaPost
 setGeneric( "betaPost", function(x) standardGeneric( "betaPost" ) )
@@ -115,7 +111,6 @@ setMethod(
 #' @title Posterior for beta
 #' @param x a \code{\linkS4class{MgsaResults}}.
 #' @return \code{data.frame}: realization values, posterior estimate and standard error for the parameter p.
-#' @usage pPost(x)
 #' @rdname pPost-methods
 #' @exportMethod pPost
 setGeneric( "pPost", function(x) standardGeneric( "pPost" ) )
@@ -133,12 +128,11 @@ setMethod(
 #' @title Posterior for each set
 #' @param x a \code{\linkS4class{MgsaResults}}.
 #' @return \code{data.frame}: For each set, number of items of the set in the population, number of items of the set in the study set, estimate of its marginal posterior probability and standard error.
-#' @usage setsResults(x)
 #' @rdname setsResults-methods
 #' @exportMethod setsResults
 setGeneric( "setsResults", function(x) standardGeneric( "setsResults" ) )
 
-#' @rdname setsResults-method
+#' @rdname setsResults-methods
 setMethod(
 		"setsResults",
 		signature=c( "MgsaResults" ),
@@ -180,7 +174,6 @@ setClass(
 #' @title How many steps per MCMC run
 #' @param x a \code{\linkS4class{MgsaMcmcResults}}.
 #' @return \code{integer}: how many steps per MCMC run.
-#' @usage steps(x)
 #' @rdname steps-methods
 #' @exportMethod steps
 setGeneric( "steps", function(x) standardGeneric( "steps" ) )
@@ -198,7 +191,6 @@ setMethod(
 #' @title How many MCMC runs
 #' @param x a \code{\linkS4class{MgsaMcmcResults}}.
 #' @return \code{integer}: how many MCMC runs.
-#' @usage restarts(x)
 #' @rdname restarts-methods
 #' @exportMethod restarts
 setGeneric( "restarts", function(x) standardGeneric( "restarts" ) )
@@ -216,7 +208,6 @@ setMethod(
 #' @title posterior estimates of the parameter alpha for each MCMC run
 #' @param x a \code{\linkS4class{MgsaMcmcResults}}.
 #' @return \code{matrix}: Posterior estimates of the parameter alpha for each MCMC run.
-#' @usage alphaMcmcPost(x)
 #' @rdname alphaMcmcPost-methods
 #' @exportMethod alphaMcmcPost
 setGeneric( "alphaMcmcPost", function(x) standardGeneric( "alphaMcmcPost" ) )
@@ -235,7 +226,6 @@ setMethod(
 #' @title posterior estimates of the parameter beta for each MCMC run
 #' @param x a \code{\linkS4class{MgsaMcmcResults}}.
 #' @return \code{matrix}: Posterior estimates of the parameter beta for each MCMC run.
-#' @usage betaMcmcPost(x)
 #' @rdname betaMcmcPost-methods
 #' @exportMethod betaMcmcPost
 setGeneric( "betaMcmcPost", function(x) standardGeneric( "betaMcmcPost" ) )
@@ -254,7 +244,6 @@ setMethod(
 #' @title posterior estimates of the parameter p for each MCMC run
 #' @param x a \code{\linkS4class{MgsaMcmcResults}}.
 #' @return \code{matrix}: Posterior estimates of the parameter p for each MCMC run.
-#' @usage pMcmcPost(x)
 #' @rdname pMcmcPost-methods
 #' @exportMethod pMcmcPost
 setGeneric( "pMcmcPost", function(x) standardGeneric( "pMcmcPost" ) )
@@ -272,7 +261,6 @@ setMethod(
 #' @title posterior estimates of the the set marginal probabilities  for each MCMC run
 #' @param x a \code{\linkS4class{MgsaMcmcResults}}.
 #' @return \code{matrix}: Posterior estimates of the set marginal probabilities for each MCMC run.
-#' @usage setsMcmcPost(x)
 #' @rdname setsMcmcPost-methods
 #' @exportMethod setsMcmcPost
 setGeneric( "setsMcmcPost", function(x) standardGeneric( "setsMcmcPost" ) )

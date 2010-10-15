@@ -96,7 +96,7 @@ In case \texttt{mgsa} must be run on several observations with the same gene set
 This can be achieved by building a \texttt{MgsaSets}.
 
 <<mgsa_custom_set>>=
-myset = MgsaSets( list(set1=LETTERS[1:3], set2=LETTERS[2:5]) )
+myset = new( "MgsaSets", sets=list(set1=LETTERS[1:3], set2=LETTERS[2:5]) )
 mgsa(c("A", "B"), myset)
 mgsa(c("B", "C"), myset)
 @
