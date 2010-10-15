@@ -1,4 +1,4 @@
 clean ups after roxygen runs:
-- remove double aliases
+- remove double aliases (show function)
 - remove link to initialize in MgsaSets.
 	Although it is not exported, a link is generated, maybe because there is a nonstandardGenericFunction for "initialize" defined from package "methods"initialize".

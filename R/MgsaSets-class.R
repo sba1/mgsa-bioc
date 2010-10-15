@@ -217,7 +217,6 @@ setMethod(
 #' @title Show an MgsaSets
 #' @param object an instance of class \code{\linkS4class{MgsaSets}}.
 #' @return an invisible \code{NULL}
-#' @usage show(object)
 #' @exportMethod show
 
 setMethod(
