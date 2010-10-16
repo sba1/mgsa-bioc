@@ -19,7 +19,7 @@
 #' The columns of the slot \code{setsResults} contains the number of items of the set in the population, the number of items of the set in the study set, the estimate of its marginal posterior probability and its standard error.
 #' The \code{\link{rownames}} are the names of the sets if available.
 #' 
-#' Accessor methods exist for each slot.
+#' Accessor, but no replacement, methods exist for each slot.
 #' 
 #' @title Results of an MGSA analysis
 #' @seealso \code{\link{mgsa}}
