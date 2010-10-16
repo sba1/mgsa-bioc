@@ -123,50 +123,50 @@ setMethod(f = "initialize",
 			.Object
 		})
 
-#' Get item annotations of a \code{\linkS4class{MgsaSets}}.
+#' Item annotations of a \code{\linkS4class{MgsaSets}}.
 #' 
-#' @title Get item annotations of a MgsaSets
+#' @title Item annotations of a MgsaSets
 #' @param sets an instance of class \code{\linkS4class{MgsaSets}}.
 #' @param items \code{character} an optional vector specifying the items of interest. 
 #' @return a \code{data.frame}: the item annotations.
-#' @exportMethod getItemAnnotations
-setGeneric( "getItemAnnotations", function(sets,items) standardGeneric( "getItemAnnotations" ) )
+#' @exportMethod itemAnnotations
+setGeneric( "itemAnnotations", function(sets,items) standardGeneric( "itemAnnotations" ) )
 
-#' @rdname getItemAnnotations-methods
+#' @rdname itemAnnotations-methods
 setMethod(
-		f="getItemAnnotations",
+		f="itemAnnotations",
 		signature = c( "MgsaSets", "missing" ),
 		function( sets, items ) sets@itemAnnotations
 )
 
-#' @rdname getItemAnnotations-methods
+#' @rdname itemAnnotations-methods
 setMethod(
-		f="getItemAnnotations",
+		f="itemAnnotations",
 		signature=c( "MgsaSets","character" ),
 		function( sets, items ) sets@itemAnnotations[sets@itemName2ItemIndex[items],]
 )
 
-#' Get set annotations of a \code{\linkS4class{MgsaSets}}.
+#' Set annotations of a \code{\linkS4class{MgsaSets}}.
 #' 
-#' @title Get set annotations of a MgsaSets
+#' @title Set annotations of a MgsaSets
 #' @param sets an instance of class \code{\linkS4class{MgsaSets}}.
 #' @param names \code{character} an optional vector specifying the names of interest. 
 #' @return a \code{data.frame}: the set annotations.
-#' @rdname getSetAnnotations-methods
-#' @exportMethod getSetAnnotations
+#' @rdname setAnnotations-methods
+#' @exportMethod setAnnotations
 
-setGeneric( "getSetAnnotations", function(sets,names) standardGeneric( "getSetAnnotations" ) )
+setGeneric( "setAnnotations", function(sets,names) standardGeneric( "setAnnotations" ) )
 
-#' @rdname getSetAnnotations-methods
+#' @rdname setAnnotations-methods
 setMethod(
-		f="getSetAnnotations",
+		f="setAnnotations",
 		signature=c( "MgsaSets", "missing" ),
 		function( sets, names ) sets@setAnnotations
 )
 
-#' @rdname getSetAnnotations-methods
+#' @rdname setAnnotations-methods
 setMethod(
-		f="getSetAnnotations",
+		f="setAnnotations",
 		signature=c( "MgsaSets", "character" ),
 		function( sets, names ) sets@setAnnotations[names,]
 )
@@ -188,25 +188,25 @@ setMethod(
 
 #' Returns the indices corresponding to the items
 #'
-#' @title Get item indices of a MgsaSets
+#' @title Item indices of a MgsaSets
 #' @param sets an instance of class \code{\linkS4class{MgsaSets}}.
 #' @param items \code{character} or \code{numeric} the items of interest. 
 #' @return a \code{integer}: the item indices.
-#' @rdname getItemsIndices-methods
-#' @exportMethod getItemsIndices
+#' @rdname itemIndices-methods
+#' @exportMethod itemIndices
 
-setGeneric("getItemsIndices", function(sets, items) standardGeneric("getItemsIndices"))
+setGeneric("itemIndices", function(sets, items) standardGeneric("itemIndices"))
 
-#' @rdname getItemsIndices-methods
+#' @rdname itemIndices-methods
 setMethod(
-		f="getItemsIndices",
+		f="itemIndices",
 		signature=c( "MgsaSets","character" ),
 		function( sets, items ) sets@itemName2ItemIndex[items]
 )
 
-#' @rdname getItemsIndices-methods
+#' @rdname itemIndices-methods
 setMethod(
-		f="getItemsIndices",
+		f="itemIndices",
 		signature=c( "MgsaSets", "numeric" ),
 		function( sets, items ) sets@itemName2ItemIndex[items]
 )
