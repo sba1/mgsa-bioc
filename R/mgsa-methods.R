@@ -50,6 +50,14 @@ mcmcSummary <- function(x){
  
 mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
 {
+	# Check parameter validity.
+	if (max(alpha) > 1) stop(sprintf("Specified value %g for alpha is out of domain [0,1]",max(alpha)))
+	if (min(alpha) < 0) stop(sprintf("Specified value %g for alpha is out of domain [0,1]",min(alpha)))
+	if (max(beta) > 1) stop(sprintf("Specified value %g for beta is out of domain [0,1]",max(beta)))
+	if (min(beta) < 0) stop(sprintf("Specified value %g for beta is out of domain [0,1]",min(beta))) 
+	if (max(p) > 1) stop(sprintf("Specified value %g for p is out of domain [0,1]",max(p)))
+	if (min(p) < 0) stop(sprintf("Specified value %g for p is out of domain [0,1]",min(p)))
+	
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
 	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads, as)
@@ -168,12 +176,12 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @param sets The sets. It can be an \code{\linkS4class{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
 #' @param population The total population. Optional. A \code{numeric}, \code{integer} or \code{character} vector.
 #' Default to \code{NULL}. See details.
-#' @param alpha Grid of values for the parameter alpha. \code{numeric}. 
-#' @param beta Grid of values for the parameter beta. \code{numeric}.
-#' @param p Grid of values for the parameter p. \code{numeric}.
+#' @param alpha Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}. 
+#' @param beta Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.
+#' @param p Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.
 #' @param steps The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater. 
 #' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
-#' @param threads The number of threads that should be used. A value of 0 means to use all available cores. Default to 0.
+#' @param threads The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.
 #' 
 #' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
 #' @return An \code{\link{MgsaMcmcResults}} object.
