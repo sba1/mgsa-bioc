@@ -1,6 +1,6 @@
 Package: mgsa
-Version: 0.3-3
-Date: 2010-10-18
+Version: 0.3-4
+Date: 2010-10-26
 Title: Model-based gene set analysis
 Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur
     <julien.gagneur@embl.de>

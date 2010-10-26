@@ -10,7 +10,7 @@ NULL
 
 #' This class represents gene ontology annotations.
 #' 
-#' For now, it is identitical to the parental class \code{\linkS4class{MgsaSets}}.
+#' For now, it is identical to the parental class \code{\linkS4class{MgsaSets}}.
 #' @title Gene Ontology annotations
 #' @seealso \code{\link{readGAF}}
 #' @exportClass MgsaGoSets
@@ -101,9 +101,10 @@ createMgsaGoSets<-function(go.ids,items)
 #' The function extracts from the annotation file all direct gene annotations and infers from the Gene Ontology all the indirect annotations (due to term relationships).
 #' This is done using the package \code{Go.db} which provides the ontology as a database and \code{RSQLite} for querying the database. 
 #' @title Read a Gene Ontology annotation file
-#' @usage readGAF(filename, evidence=NULL)
+#' @usage readGAF(filename, evidence=NULL, aspect=c("P", "F", "C"))
 #' @param filename The name of the Gene Ontology annotation file. It must be in the GAF 1.0 or 2.0 format. It may be gzip-compressed.
-#' @param evidence \code{character} or \code{NULL}. Only annotations with evidence code in \code{evidence} are returned. If \code{NULL} (default), all annotations are returned.   
+#' @param evidence \code{character} or \code{NULL}. Only annotations with evidence code in \code{evidence} are returned. If \code{NULL} (default), annotations of all evidence codes are returned.   
+#' @param aspect \code{character} with values in P, C or F. Only annotations of the listed GO namespaces P (biological process), F (molecular function) or C (cellular component) are returned. By default, annotations of the three namespaces are returned.   
 #' @return An \code{\linkS4class{MgsaGoSets}} object.
 #' @seealso \code{\linkS4class{MgsaGoSets}}, \code{\link{mgsa}}
 #' @references The Gene Ontology Consortium. Gene Ontology: tool for the unification of biology. Nature Genetics, 2000.
@@ -116,17 +117,24 @@ createMgsaGoSets<-function(go.ids,items)
 #' readGAF(gofile, evidence=c("EXP", "IDA"))
 #' @export readGAF 
 
-readGAF = function(filename, evidence=NULL){
+readGAF = function(filename, evidence=NULL, aspect=c("P", "F", "C")){
+	
 	## the column IDs of interest according to GAF 1.0 and 2.0
 	gene.id.col = 2
 	symbol.col = 3
 	go.id.col = 5
 	evidence.col = 7
+	aspect.col = 9
 	name.col = 10
 	
+	## validity of parameters
 	if( !( is.null(evidence) | is.character(evidence) ) )
 		stop("evidence must be NULL or a character vector.")
 	
+	if(!all(aspect %in% c("P", "F", "C")))
+		stop("aspect must be a character vector with all entries in c(\"P\", \"F\", \"C\")")
+	
+	## reading the file
 	goa = read.delim(gzfile(filename), na.strings = "", header=FALSE, comment.char = "!", sep="\t")
 	
 	goa = na.omit( 
@@ -135,9 +143,12 @@ readGAF = function(filename, evidence=NULL){
 					gene.ids = goa[, gene.id.col],
 					evidence.code = goa[, evidence.col],
 					symbol = goa[, symbol.col],
-					name = goa[, name.col]
+					name = goa[, name.col],
+					aspect.code = goa[,aspect.col]
 			)
 	)
+	
+	goa = subset(goa, aspect.code %in% aspect)
 	
 	if(!is.null(evidence))
 		goa = subset(goa, evidence.code %in% evidence)
