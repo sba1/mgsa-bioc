@@ -57,7 +57,6 @@ mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=se
 	if (min(beta) < 0) stop(sprintf("Specified value %g for beta is out of domain [0,1]",min(beta))) 
 	if (max(p) > 1) stop(sprintf("Specified value %g for p is out of domain [0,1]",max(p)))
 	if (min(p) < 0) stop(sprintf("Specified value %g for p is out of domain [0,1]",min(p)))
-	
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
 	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, restarts=restarts, threads=threads, as)
@@ -265,16 +264,27 @@ setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
 		def=function( o, sets, population, alpha, beta, p, steps, restarts, threads) {
+			
+			items<-itemIndices(sets,o)
+			items.nas<-sum(is.na(items))
+			if (items.nas > 0)
+			{
+				# filter out any NAs produced during the mapping.
+				# Inform the user about this procedure.
+				warning(sprintf("Specified observation contains %d unmapple items. Excluded them from calculation.", items.nas))
+				items<-na.omit(items)
+			}
+
 			if (is.null(population))
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper(itemIndices(sets,o), sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads))
+				return(mgsa.wrapper(items, sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads))
 			}
 			else
 			{
 				population<-itemIndices(sets,population)
-				return(mgsa ( itemIndices(sets,o), sets@sets, population, alpha, beta, p, steps, restarts, threads))
+				return(mgsa ( items, sets@sets, population, alpha, beta, p, steps, restarts, threads))
 			}
 		}
 )
