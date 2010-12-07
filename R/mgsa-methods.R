@@ -178,6 +178,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @param alpha Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}. 
 #' @param beta Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.
 #' @param p Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.
+#' The default grid value for p is such that between 1 and 20 sets are active in expectation. Its upper limit is constrained to be lower than 1/3 independently of the total number of sets to make sure that complex solutions are penalized.
 #' @param steps The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater. 
 #' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
 #' @param threads The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.
