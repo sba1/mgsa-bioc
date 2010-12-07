@@ -165,6 +165,8 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' When \code{o} is \code{logical}, it is first coerced to integer with a call on \code{\link{which}}.
 #' Observations outside the \code{population} are not taken into account. If \code{population} is \code{NULL}, it is defined as the union of all sets.
 #' 
+#' The default grid value for p is such that between 1 and 20 sets are active in expectation.
+#' The lower limit is constrained to be lower than 0\.1 and the upper limit lower than 0\.3 independently of the total number of sets to make sure that complex solutions are penalized.
 #' Marginal posteriors of activity of each set are estimated using an MCMC sampler as described in Bauer et al., 2010.
 #' Because convergence of an MCM sampler is difficult to assess, it is recommended to run it several times (using \code{restarts}).
 #' If variations between runs are too large (see \code{\link{MgsaResults}}), the number of steps (\code{steps}) of each MCMC run should be increased.
@@ -178,7 +180,6 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @param alpha Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}. 
 #' @param beta Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.
 #' @param p Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.
-#' The default grid value for p is such that between 1 and 20 sets are active in expectation. Its upper limit is constrained to be lower than 1/3 independently of the total number of sets to make sure that complex solutions are penalized.
 #' @param steps The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater. 
 #' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
 #' @param threads The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.
@@ -188,7 +189,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @usage mgsa(
 #' 				o, sets, population=NULL,
 #' 				alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
-#' 				p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets),
+#' 				p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10),
 #' 				steps=1e6, restarts=5, threads=0
 #' )
 #' 
@@ -209,7 +210,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @exportMethod mgsa
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=5, threads=0){
+		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10), steps=1e6, restarts=5, threads=0){
 			standardGeneric("mgsa")
 		}
 )
