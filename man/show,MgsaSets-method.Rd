@@ -1,6 +1,5 @@
 \name{show,MgsaSets-method}
 \alias{show,MgsaSets-method}
-\alias{show}
 \title{Show an MgsaSets}
 \usage{\S4method{show}{MgsaSets}(object)
 }
