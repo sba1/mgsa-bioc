@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 \title{The \emph{mgsa} package}
 \author{Sebastian Bauer, Julien Gagneur}
-\date{13 October 2010}
+\date{13 December 2010}
 
 % The is for R CMD check, which finds it in spite of the "%", and also for
 % automatic creation of links in the HTML documentation for the package:
