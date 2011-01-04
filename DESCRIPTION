@@ -5,7 +5,7 @@ Title: Model-based gene set analysis
 Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur
     <julien.gagneur@embl.de>
 Maintainer: Sebastian Bauer <Sebastian.Bauer@charite.de>
-Depends: R (>= 2.9.0), methods, gplots
+Depends: R (>= 2.13.0), methods, gplots
 Suggests: DBI, RSQLite, GO.db
 Description: Model-based Gene Set Analysis (MGSA) is a Bayesian
     modeling approach for gene set enrichment. The package mgsa
