@@ -1,4 +1,4 @@
-AC_INIT([mgsa], 0.2)
+AC_INIT([mgsa], 0.99.0)
 
 dnl ******************************
 dnl openmp checking
