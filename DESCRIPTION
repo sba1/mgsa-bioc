@@ -6,6 +6,7 @@ Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur
     <julien.gagneur@embl.de>
 Maintainer: Sebastian Bauer <Sebastian.Bauer@charite.de>
 Depends: R (>= 2.9.0), methods, gplots
+Imports: gplots, graphics, stats, utils
 Suggests: DBI, RSQLite, GO.db
 Description: Model-based Gene Set Analysis (MGSA) is a Bayesian
     modeling approach for gene set enrichment. The package mgsa
@@ -15,4 +16,4 @@ License: Artistic-2.0
 LazyLoad: yes
 Collate: 'dottedTable.R' 'MgsaSets-class.R' 'MgsaGoSets-class.R'
     'MgsaResults-class.R' 'mgsa-methods.R' 'mgsa-package.R' 'zzz.R'
-Imports: gplots, graphics, stats, utils
+
