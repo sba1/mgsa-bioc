@@ -1,0 +1,50 @@
+!CVS Version: Revision: 1.1423 $
+!GOC Validation Date: 12/08/2008 $
+!Submission Date: 12/8/2008
+!
+! The above "Submission Date" is when the annotation project provided
+! this file to the Gene Ontology Consortium (GOC).  The "GOC Validation
+! Date" indicates when this file was last changed as a result of a GOC
+! validation and filtering process.  The "CVS Version" above is the
+! GOC version of this file.
+!
+! Note: The contents of this file may differ from that submitted to the
+! GOC. The identifiers and syntax of the file have been checked, rows of
+! data not meeting the standards set by the GOC have been removed. This
+! file may also have annotations removed because the annotations for the
+! listed Taxonomy identifier are only allowed in a file provided by
+! another annotation project.  The original submitted file is available from:
+!  http://www.geneontology.org/gene-associations/submission/
+!
+! For information on which taxon are allowed in which files please see:
+!  http://www.geneontology.org/GO.annotation.shtml#script
+!
+!Project_name: Saccharomyces Genome Database (SGD)
+!URL: http://www.yeastgenome.org/
+!Contact Email: yeast-curator@yeastgenome.org
+!Funding: NHGRI of US National Institutes of Health, 5-P41-HG001315-12
+!
+SGD	S000007287	15S_RRNA		GO:0003735	SGD_REF:S000073642|PMID:6261980	ISS		F	Ribosomal RNA of the small mitochondrial ribosomal subunit	15S_rRNA|15S_RRNA_2	gene	taxon:4932	20030723	SGD
+SGD	S000007287	15S_RRNA		GO:0005763	SGD_REF:S000073642|PMID:6261980	ISS		C	Ribosomal RNA of the small mitochondrial ribosomal subunit	15S_rRNA|15S_RRNA_2	gene	taxon:4932	20040202	SGD
+SGD	S000007287	15S_RRNA		GO:0006412	SGD_REF:S000073643|PMID:6280192	IGI		P	Ribosomal RNA of the small mitochondrial ribosomal subunit	15S_rRNA|15S_RRNA_2	gene	taxon:4932	20060630	SGD
+SGD	S000007287	15S_RRNA		GO:0042255	SGD_REF:S000051605|PMID:2167435	IGI		P	Ribosomal RNA of the small mitochondrial ribosomal subunit	15S_rRNA|15S_RRNA_2	gene	taxon:4932	20030723	SGD
+SGD	S000007288	21S_RRNA		GO:0003735	SGD_REF:S000073372|PMID:6759872	IMP		F	Mitochondrial 21S rRNA	21S_rRNA|21S_rRNA_3|21S_rRNA_4	gene	taxon:4932	20030721	SGD
+SGD	S000007288	21S_RRNA		GO:0003735	SGD_REF:S000073372|PMID:6759872	ISS		F	Mitochondrial 21S rRNA	21S_rRNA|21S_rRNA_3|21S_rRNA_4	gene	taxon:4932	20030721	SGD
+SGD	S000007288	21S_RRNA		GO:0005762	SGD_REF:S000073372|PMID:6759872	IDA		C	Mitochondrial 21S rRNA	21S_rRNA|21S_rRNA_3|21S_rRNA_4	gene	taxon:4932	20040202	SGD
+SGD	S000007288	21S_RRNA		GO:0006412	SGD_REF:S000073372|PMID:6759872	IMP		P	Mitochondrial 21S rRNA	21S_rRNA|21S_rRNA_3|21S_rRNA_4	gene	taxon:4932	20060630	SGD
+SGD	S000007288	21S_RRNA		GO:0006412	SGD_REF:S000073372|PMID:6759872	ISS		P	Mitochondrial 21S rRNA	21S_rRNA|21S_rRNA_3|21S_rRNA_4	gene	taxon:4932	20060630	SGD
+SGD	S000007288	21S_RRNA		GO:0042255	SGD_REF:S000073372|PMID:6759872	IMP		P	Mitochondrial 21S rRNA	21S_rRNA|21S_rRNA_3|21S_rRNA_4	gene	taxon:4932	20030721	SGD
+SGD	S000004660	AAC1		GO:0005215	SGD_REF:S000124036	IEA	InterPro:IPR002113	F	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081013	UniProtKB
+SGD	S000004660	AAC1		GO:0005471	SGD_REF:S000050955|PMID:2167309	IDA		F	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20010213	SGD
+SGD	S000004660	AAC1		GO:0005488	SGD_REF:S000124036	IEA	InterPro:IPR002067|InterPro:IPR001993	F	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081013	UniProtKB
+SGD	S000004660	AAC1		GO:0005739	SGD_REF:S000117178|PMID:16823961	IDA		C	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20061212	SGD
+SGD	S000004660	AAC1		GO:0005739	SGD_REF:S000124038	IEA	SP_KW:KW-0496	C	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081002	UniProtKB
+SGD	S000004660	AAC1		GO:0005743	SGD_REF:S000125578	IEA	SP_SL:SL-0168	C	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081006	UniProtKB
+SGD	S000004660	AAC1		GO:0005743	SGD_REF:S000124038	IEA	SP_KW:KW-0999	C	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081006	UniProtKB
+SGD	S000004660	AAC1		GO:0005743	SGD_REF:S000124036	IEA	InterPro:IPR002113|InterPro:IPR002067	C	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081006	UniProtKB
+SGD	S000004660	AAC1		GO:0005743	SGD_REF:S000050955|PMID:2167309	TAS		C	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20010118	SGD
+SGD	S000004660	AAC1		GO:0006783	SGD_REF:S000127569|PMID:18728780	IGI	SGD:S000000289|SGD:S000000126	P	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20080909	SGD
+SGD	S000004660	AAC1		GO:0006810	SGD_REF:S000124038	IEA	SP_KW:KW-0813	P	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081002	UniProtKB
+SGD	S000004660	AAC1		GO:0006810	SGD_REF:S000124036	IEA	InterPro:IPR001993|InterPro:IPR002113|InterPro:IPR002067	P	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20081002	UniProtKB
+SGD	S000004660	AAC1		GO:0006839	SGD_REF:S000050955|PMID:2167309	IGI	SGD:S000000126	P	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20040226	SGD
+SGD	S000004660	AAC1		GO:0009060	SGD_REF:S000050955|PMID:2167309	IGI	SGD:S000000126	P	Mitochondrial inner membrane ADP/ATP translocator, exchanges cytosolic ADP for mitochondrially synthesized ATP	YMR056C	gene	taxon:4932	20040226	SGD

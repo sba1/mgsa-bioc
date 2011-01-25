@@ -1,0 +1,8 @@
+clean ups after roxygen runs:
+- remove double aliases. So far:
+	\alias{show} entries in show,MgsaResults-method.Rd and in show,MgsaSets-method.Rd
+- remove link to initialize in MgsaSets.
+	Although it is not exported, a link is generated, maybe because there is a nonstandardGenericFunction for "initialize" defined from package "methods"initialize".
+
+before doing R CMD check:
+- remove *.o in src

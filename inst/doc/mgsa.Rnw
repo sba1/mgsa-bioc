@@ -1,0 +1,121 @@
+\documentclass[a4paper]{article}
+\title{The \emph{mgsa} package}
+\author{Sebastian Bauer, Julien Gagneur}
+\date{13 December 2010}
+
+% The is for R CMD check, which finds it in spite of the "%", and also for
+% automatic creation of links in the HTML documentation for the package:
+% \VignetteIndexEntry{Overview of the genomeIntervals package.}
+
+
+
+\begin{document}
+
+%%%%%%%% Setup
+
+% Don't reform code
+\SweaveOpts{keep.source=TRUE}
+
+% Size for figures
+\setkeys{Gin}{width=\textwidth}
+
+% Reduce characters per line in R output
+
+<<set_width, echo=FALSE>>=
+options( width = 80 )
+@ 
+
+% Make title
+\maketitle
+
+
+%%%%%%%% Main text
+
+\section{Introduction}
+Model-based Gene Set Analysis (MGSA, Bauer et al.~\cite{Bauer2010}) is a Bayesian modeling approach for gene set enrichment.
+The package \emph{mgsa} implements MGSA and tools to use MGSA together with the Gene Ontology~\cite{GO2000}. 
+
+\section{Quick start}
+We start with a small simulated dataset which contains \texttt{example\_go}, a random subset of yeast gene ontology annotations with 20 terms and
+\texttt{example\_o}, a simulated set of observed positive genes.
+These genes could for example be the "hits" of some screen or a set of differentially expressed genes.
+In the simulation, the terms GO:0006109 and GO:0030663 were active, implying that genes annotated to these terms were more likely to be observed positives than other genes. 
+<<loadex>>=
+library(mgsa)
+data("example")
+example_go
+example_o
+@
+
+The method \texttt{mgsa} fits the MGSA model.
+It returns a \texttt{MgsaMcmcResults} object whose \texttt{print} method displays the most likely active terms. 
+On this example, \texttt{mgsa} correctly reports largest posterior probabilities for the terms GO:0006109 and GO:0030663.
+The call to \texttt{set.seed()}, which sets the seed of the random number generator, simply ensures the example of this vignette to be reproducible.
+It is not required for \texttt{mgsa()} to work. 
+<<fitex>>=
+set.seed(0)
+fit = mgsa(example_o, example_go)
+fit
+@
+
+The method \texttt{plot} provides a graphical visualization of the fit.
+
+<<plotex, fig=TRUE>>=
+plot(fit)
+@
+
+\section{Using the Gene Ontology}
+The Gene Ontology~\cite{GO2000} (GO) provides structured annotations to genes.
+Genes with the same annotation consitute a gene set. MGSA can be run on these gene sets.
+GO annotation files for your organism of study can be downloaded at the GO web page:
+http://www.geneontology.org.
+
+The function \texttt{readGAF} creates an \texttt{MgsaGoSets} object, a particular \texttt{MgsaSets}, from such a gene annotation file.
+Note that \texttt{readGAF} requires the package \texttt{GO.db} and \texttt{RSQLite} to be installed.
+
+For illustration purposes, a simplified GO annotation file with only three yeast genes is provided:
+
+<<readGAF>>=
+readGAF(
+	system.file(
+		"example_files/gene_association_head.sgd",
+		package="mgsa"
+	)
+)
+@     
+
+\section{Using custom gene sets}
+MGSA is not restricted to Gene Ontology and can be applied to any gene sets.
+The method \texttt{mgsa} can directly be called on such gene sets provided as \texttt{list} as in the example below.
+<<mgsa_custom_set>>=
+mgsa( c("A", "B"), list(set1=LETTERS[1:3], set2=LETTERS[2:5]) ) 
+@
+
+Internally, the method \texttt{mgsa} indexes all elements of the sets before fitting the model.
+In case \texttt{mgsa} must be run on several observations with the same gene sets, computations can be speeded up by performing this indexing once for all.
+This can be achieved by building a \texttt{MgsaSets}.
+
+<<mgsa_custom_set>>=
+myset = new( "MgsaSets", sets=list(set1=LETTERS[1:3], set2=LETTERS[2:5]) )
+mgsa(c("A", "B"), myset)
+mgsa(c("B", "C"), myset)
+@
+
+
+
+\begin{thebibliography}{10}
+
+\bibitem{Bauer2010}
+S. Bauer, J. Gagneur and P. N. Robinson.
+\newblock GOing Bayesian: model-based gene set analysis of genome-scale data.
+\newblock \textit{Nucleic acids research}, 2010.
+
+
+\bibitem{GO2000}
+The Gene Ontology Consortium.
+\newblock Gene Ontology: tool for the unification of biology.
+\newblock \textit{Nature Genetics}, 25:25--29,2000.
+
+\end{thebibliography}
+
+\end{document}
