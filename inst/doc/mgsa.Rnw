@@ -5,7 +5,7 @@
 
 % The is for R CMD check, which finds it in spite of the "%", and also for
 % automatic creation of links in the HTML documentation for the package:
-% \VignetteIndexEntry{Overview of the genomeIntervals package.}
+% \VignetteIndexEntry{Overview of the mgsa package.}
 
 
 
