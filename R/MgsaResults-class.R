@@ -320,7 +320,6 @@ setMethod(
 		signature=c( "MgsaResults" ),
 		function( x, y, ... ){
 			require(gplots)
-			#par( mfrow=c(2,3) )
 			
 			nrowShow <- min (10 , nrow(x@setsResults) )
 			sr = x@setsResults[ rev(order(x@setsResults$estimate, decreasing = TRUE)[1:nrowShow]), ]
@@ -359,6 +358,8 @@ setMethod(
 			## beta
 			screen(7)
 			with( x@betaPost, plot( value, estimate, xlab=expression(beta), ylab="Posterior" ) )
+			
+			close.screen(all=T)
 		}
 )
 
