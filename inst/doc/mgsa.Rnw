@@ -1,7 +1,7 @@
 \documentclass[a4paper]{article}
 \title{The \emph{mgsa} package}
 \author{Sebastian Bauer, Julien Gagneur}
-\date{13 December 2010}
+\date{28 April 2011}
 
 % The is for R CMD check, which finds it in spite of the "%", and also for
 % automatic creation of links in the HTML documentation for the package:
@@ -35,9 +35,29 @@ options( width = 80 )
 Model-based Gene Set Analysis (MGSA, Bauer et al.~\cite{Bauer2010}) is a Bayesian modeling approach for gene set enrichment.
 The package \emph{mgsa} implements MGSA and tools to use MGSA together with the Gene Ontology~\cite{GO2000}. 
 
+MGSA takes as input \emph{observations} (such as differentially expressed genes) and a list of gene \emph{sets} (for example pathways or annottated terms of the gene ontologies).
+The model assumes that some sets to be inferred are \emph{active} and that all genes member of active sets are themselves active.
+Active genes are more likely to belong to the observations and inactive genes not.
+Fitting the model amounts to infer the probability of every set to be active given the observations.
+
+
+This procedure provides a useful alternative to classical gene set enrichment analysis~\cite{Bauer2010}.
+Classical methods analyse each set in isolation. Because sets such as biological pathways often share genes with each other, the returned list of enriched sets is usually long and redundant. 
+In contrast, MGSA takes set overlap into account by working on all sets simultaneously and substantially reduces the number of redundant sets.
+
+The model have three parameters:
+\begin{itemize}
+\item $\alpha$, the false positive rate i.e. the probability of an inactive gene to actually be observed;
+\item $\beta$, the false negative rate i.e. the probability of an active gene to actually be not observed;
+\item $p$, the prior probability for any set to be active, a typically small number ensuring sparse solutions to be inferred.
+\end{itemize}
+MGSA is Bayesian about these parameters too. Relatively uninformative priors are specified for them and the algorithm performs inferrence on the parameters as well.
+
+Technical details about the algortihm and benchmarks of the method are given in~\cite{Bauer2010}.
+ 
 \section{Quick start}
 We start with a small simulated dataset which contains \texttt{example\_go}, a random subset of yeast gene ontology annotations with 20 terms and
-\texttt{example\_o}, a simulated set of observed positive genes.
+\texttt{example\_o}, a simulated set of observed genes.
 These genes could for example be the "hits" of some screen or a set of differentially expressed genes.
 In the simulation, the terms GO:0006109 and GO:0030663 were active, implying that genes annotated to these terms were more likely to be observed positives than other genes. 
 <<loadex>>=
@@ -64,6 +84,15 @@ The method \texttt{plot} provides a graphical visualization of the fit.
 plot(fit)
 @
 
+Finally inferrence results on set activities can be extracted with the accessor \texttt{setsResults()} as a data frame.
+This in turn can be sorted, filtered with standard data frame function.
+The following code extract the set results into a data frame named \texttt{res} and filter for those with posterior probability estimate greater than 0.5.  
+<<setsResults>>=
+res = setsResults(fit)
+subset(res, estimate > 0.5)
+@
+
+  
 \section{Using the Gene Ontology}
 The Gene Ontology~\cite{GO2000} (GO) provides structured annotations to genes.
 Genes with the same annotation consitute a gene set. MGSA can be run on these gene sets.
