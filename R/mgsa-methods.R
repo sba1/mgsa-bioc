@@ -281,12 +281,15 @@ setMethod(
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				return(mgsa.wrapper(items, sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads))
+				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, alpha, beta, p, steps, restarts, threads)
+				
 			}
 			else
 			{
 				population<-itemIndices(sets,population)
-				return(mgsa ( items, sets@sets, population, alpha, beta, p, steps, restarts, threads))
+				rv = mgsa ( items, sets@sets, population, alpha, beta, p, steps, restarts, threads)
 			}
+			rv@setsResults = cbind(setsResults(rv),  setAnnotations(sets)[ rownames(setsResults(rv) ), ] )
+			return( rv )
 		}
 )

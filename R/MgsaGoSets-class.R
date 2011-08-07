@@ -27,12 +27,12 @@ setClass(
 #' is sufficient to specify just the directly asserted mapping (or annotation), 
 #' i.e., the most specific ones. The true path rule is taken account, that is, if an
 #' item is annotated to a term then it will be also annotated to more general
-#' terms (some people prefer to say that just the transitive colsure is calculated).
+#' terms (some people prefer to say that just the transitive closure is calculated).
 #'
 #' @param go.ids a character vector of GO ids (GO:00001234)
 #' @param items a vector of identifiers that are annotated to the term
 #'   in the corresponding position of the go.ids vector.
-#' @nord
+#' @export readGAF 
 
 createMgsaGoSets<-function(go.ids,items)
 {
