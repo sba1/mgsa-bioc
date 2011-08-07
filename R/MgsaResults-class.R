@@ -295,11 +295,9 @@ setMethod(
 					sep = ""
 			)
 			
-			print(str(object@setsResults))
-			
 			cat("\nPosterior on set activity (decreasing order):\n")
 			nrowShow <- min (10 , nrow(object@setsResults) )
-			print( object@setsResults[ order(object@setsResults$estimate, decreasing = TRUE)[1:nrowShow], ] )
+			print( dottedTable(object@setsResults[ order(object@setsResults$estimate, decreasing = TRUE)[1:nrowShow], ] , ncols=6 ) )
 			if(nrowShow < nrow(object@setsResults) ){
 				cat("... and ", nrow(object@setsResults) - nrowShow, " other sets.\n" )
 			}
