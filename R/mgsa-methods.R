@@ -289,7 +289,7 @@ setMethod(
 				population<-itemIndices(sets,population)
 				rv = mgsa ( items, sets@sets, population, alpha, beta, p, steps, restarts, threads)
 			}
-			rv@setsResults = cbind(setsResults(rv),  setAnnotations(sets)[ rownames(setsResults(rv) ), ] )
+			rv@setsResults = cbind(setsResults(rv),  setAnnotations(sets)[ rownames(setsResults(rv) ), , drop=FALSE] )
 			return( rv )
 		}
 )
