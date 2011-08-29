@@ -12,4 +12,20 @@
 #' @keywords package
 NULL
 
+#' This data is an example GO set for mgsa.
+#'
+#' @name example-go
+#' @aliases example_go
+#' @docType data
+#' @title Example GO sets for mgsa
+#' @keywords data
+NULL
 
+#' This data is an example objects for mgsa.
+#'
+#' @name example-o
+#' @aliases example_o
+#' @docType data
+#' @title Example objects for mgsa
+#' @keywords data
+NULL
