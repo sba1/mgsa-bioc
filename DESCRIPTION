@@ -1,5 +1,5 @@
 Package: mgsa
-Version: 1.5.0
+Version: 1.5.1
 Date: 2011-04-28
 Title: Model-based gene set analysis
 Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur
@@ -13,7 +13,7 @@ Description: Model-based Gene Set Analysis (MGSA) is a Bayesian
     implements MGSA and tools to use MGSA together with the Gene
     Ontology.
 License: Artistic-2.0
-biocViews: Pathways, GO
+biocViews: Pathways, GO, GeneSetAnalysis
 LazyLoad: yes
 Collate: 'dottedTable.R' 'MgsaSets-class.R' 'MgsaGoSets-class.R'
     'MgsaResults-class.R' 'mgsa-methods.R' 'mgsa-package.R' 'zzz.R'
