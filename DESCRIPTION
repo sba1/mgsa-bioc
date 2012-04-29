@@ -13,7 +13,7 @@ Description: Model-based Gene Set Analysis (MGSA) is a Bayesian
     implements MGSA and tools to use MGSA together with the Gene
     Ontology.
 License: Artistic-2.0
-biocViews: Pathways, GO, GeneSetAnalysis
+biocViews: Pathways, GO, GeneSetEnrichment
 LazyLoad: yes
 Collate: 'dottedTable.R' 'MgsaSets-class.R' 'MgsaGoSets-class.R'
     'MgsaResults-class.R' 'mgsa-methods.R' 'mgsa-package.R' 'zzz.R'
