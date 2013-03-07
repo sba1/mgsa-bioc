@@ -130,6 +130,7 @@ setMethod(f = "initialize",
 #' @param items \code{character} an optional vector specifying the items of interest. 
 #' @return a \code{data.frame}: the item annotations.
 #' @exportMethod itemAnnotations
+#' @rdname itemAnnotations-methods
 setGeneric( "itemAnnotations", function(sets,items) standardGeneric( "itemAnnotations" ) )
 
 #' @rdname itemAnnotations-methods
