@@ -2,9 +2,9 @@ Package: mgsa
 Version: 1.7.0
 Date: 2012-07-30
 Title: Model-based gene set analysis
-Author: Sebastian Bauer <Sebastian.Bauer@charite.de>, Julien Gagneur
+Author: Sebastian Bauer <mail@sebastianbauer.info>, Julien Gagneur
     <gagneur@genzentrum.lmu.de>
-Maintainer: Sebastian Bauer <Sebastian.Bauer@charite.de>
+Maintainer: Sebastian Bauer <mail@sebastianbauer.info>
 Depends: R (>= 2.9.0), methods, gplots
 Imports: gplots, graphics, stats, utils
 Suggests: DBI, RSQLite, GO.db
