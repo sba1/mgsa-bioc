@@ -46,7 +46,7 @@ setClass(
 #' Initializes the mapping when some parameters are not specified
 #' 
 #' @keywords internal
-#' @nord
+#' @noRd
 
 setMethod(f = "initialize",
 		signature = c("MgsaSets"),

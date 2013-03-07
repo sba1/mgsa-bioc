@@ -4,7 +4,7 @@ NULL
 
 #' Trampoline to jump into the fast C implementation.
 #' 
-#' @nord
+#' @noRd
 #' @useDynLib mgsa
 
 mgsa.trampoline <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0) ){
@@ -18,7 +18,7 @@ mgsa.trampoline <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta
 #'  
 #' @param x specifies a matrix of values with as a many columns as MCMC runs
 #' 
-#' @nord
+#' @noRd
 #'
 mcmcSummary <- function(x){
 	data.frame( estimate = rowMeans(x), std.error = apply(x,1,sd)/sqrt(ncol(x)) )	
@@ -46,7 +46,7 @@ mcmcSummary <- function(x){
 #' @return an object of class \code{\link{MgsaMcmcResults}}.
 #' 
 #' @keywords internal 
-#' @nord
+#' @noRd
  
 mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0)
 {
@@ -120,7 +120,7 @@ mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=se
 #' @param as define the active sets. No MCMC is run in this case. Just the log likelihood is returned.  
 #'
 #' @keywords internal
-#' @nord
+#' @noRd
  
 mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, restarts=1, threads=0, as=integer(0), debug=0){
 	
