@@ -208,6 +208,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' plot(fit)
 #' ## End(Not run)
 #' @exportMethod mgsa
+#' @rdname mgsa-methods
 setGeneric(
 		name="mgsa",
 		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10), steps=1e6, restarts=5, threads=0){
