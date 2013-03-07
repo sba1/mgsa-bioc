@@ -1,10 +1,10 @@
-#' @nord
+#' @noRd
 dottedString <- function(x, width=30){
 	nc = sapply(x, nchar)
 	ifelse( nc<=width, x, paste(substr(x,1,width), "...", sep="") )
 }
 
-#' @nord
+#' @noRd
 dottedTable <- function(tab, nrows=5 , ncols=2, width=30 ){
 	x <- tab
 	if(nrows <  nrow(tab) ) x <- x[1:nrows,,drop=FALSE]
