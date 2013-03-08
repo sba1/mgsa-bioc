@@ -1,2 +1,6 @@
 This directory is interesting only for developers of the mgsa
 package.
+
+When building the doc, you need a roxygen2 package that supports
+the slot tag. For instance, use
+ https://github.com/sba1/roxygen.git
