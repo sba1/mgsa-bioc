@@ -357,7 +357,7 @@ setMethod(
 			screen(7)
 			with( x@betaPost, plot( value, estimate, xlab=expression(beta), ylab="Posterior" ) )
 			
-			close.screen(all.screen=T)
+			close.screen(all.screens=T)
 		}
 )
 
