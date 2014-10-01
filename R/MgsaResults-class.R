@@ -347,15 +347,15 @@ setMethod(
 			
 			## p
 			screen(5)
-			with( x@pPost, plot( value, estimate, xlab="p", ylab="Posterior" ) )
+			with( x@pPost, plot( value, estimate, xlab="p", type = 'b', ylab="Posterior" ) )
 			
 			## alpha
 			screen(6)
-			with( x@alphaPost, plot( value, estimate, xlab=expression(alpha), ylab="Posterior" ) )
+			with( x@alphaPost, plot( value, estimate, xlab=expression(alpha), type = 'b', ylab="Posterior" ) )
 			
 			## beta
 			screen(7)
-			with( x@betaPost, plot( value, estimate, xlab=expression(beta), ylab="Posterior" ) )
+			with( x@betaPost, plot( value, estimate, xlab=expression(beta), type = 'b', ylab="Posterior" ) )
 			
 			close.screen(all.screens=T)
 		}
