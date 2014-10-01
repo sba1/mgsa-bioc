@@ -144,7 +144,7 @@ setMethod(
 setMethod(
 		f="itemAnnotations",
 		signature=c( "MgsaSets","character" ),
-		function( sets, items ) sets@itemAnnotations[sets@itemName2ItemIndex[items],]
+		function( sets, items ) sets@itemAnnotations[match(items,row.names(sets@itemAnnotations)),,drop=FALSE]
 )
 
 #' Set annotations of a \code{\linkS4class{MgsaSets}}.
@@ -169,7 +169,7 @@ setMethod(
 setMethod(
 		f="setAnnotations",
 		signature=c( "MgsaSets", "character" ),
-		function( sets, names ) sets@setAnnotations[names,]
+		function( sets, names ) sets@setAnnotations[match(names,row.names(sets@setAnnotations)),,drop=FALSE]
 )
 
 #' Length (number of sets) of \code{\linkS4class{MgsaSets}}.
