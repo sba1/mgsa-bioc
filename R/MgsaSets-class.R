@@ -144,7 +144,7 @@ setMethod(
 setMethod(
 		f="itemAnnotations",
 		signature=c( "MgsaSets","character" ),
-		function( sets, items ) sets@itemAnnotations[sets@itemName2ItemIndex[items],]
+		function( sets, items ) sets@itemAnnotations[match(items,row.names(sets@itemAnnotations)),,drop=FALSE]
 )
 
 #' Set annotations of a \code{\linkS4class{MgsaSets}}.
@@ -169,7 +169,7 @@ setMethod(
 setMethod(
 		f="setAnnotations",
 		signature=c( "MgsaSets", "character" ),
-		function( sets, names ) sets@setAnnotations[names,]
+		function( sets, names ) sets@setAnnotations[match(names,row.names(sets@setAnnotations)),,drop=FALSE]
 )
 
 #' Length (number of sets) of \code{\linkS4class{MgsaSets}}.
@@ -255,13 +255,12 @@ setMethod(
 )
 
 
-#' Returns a subset of an \code{\linkS4class{MgsaSets}} in which only the required
-#' items are kept. Empty sets are removed.
+#' Returns a subset of an \code{\linkS4class{MgsaSets}} that contains
+#' only the specified items. Empty sets are removed.
 #' 
-#' @note TODO: do we need that method? Does it work on items or item indexes? 
 #' @title Subset of an MgsaSets
 #' @param sets an \code{\linkS4class{MgsaSets}}.
-#' @param items \code{numeric}. The items to restrict on.
+#' @param items \code{character}. The items to restrict on.
 #' @return an \code{\linkS4class{MgsaSets}}.
 #' @rdname subMgsaSets-methods
 #' @exportMethod subMgsaSets
@@ -271,44 +270,27 @@ setGeneric("subMgsaSets", function(sets, items) standardGeneric("subMgsaSets"))
 #' @rdname subMgsaSets-methods
 setMethod(
 		f="subMgsaSets",
-		signature=c( "MgsaSets", "numeric" ),
+		signature=c( "MgsaSets", "character" ),
 		function( sets, items )
 		{
-			sets<-sets@sets
-			subset.contains<-items
-			
-			if (TRUE)
-			{
-				encode <- function(x){ match( intersect(x, items), items) }
-				subsets <- lapply(sets, encode)
-				subsets <- subset(subsets,lapply(subsets,length)>0)
-			} else
-			{
-				#
-				# We create the subset mapping by the following juggling
-				#
-				
-				# We assume that each set has name
-				if (is.null(names(sets))) names(sets)<-1:length(sets)
-				
-				# First, construct a item->set mapping
-				# we assume that each item has at least one set
-				set.names<-rep(names(sets),lapply(sets,length))
-				set.items<-unlist(sets,use.names=F)
-				items<-split(set.names,set.items)
-				
-				# Take the subset
-				items.subset<-items[subset.contains]
-				
-				# Create a new set->item mapping based on the item subset
-				subitem.names<-rep(names(items.subset),lapply(items.subset,length))
-				subitem.names.f<-factor(subitem.names)
-				levels(subitem.names.f)<-1:length(levels(subitem.names.f))		# relabel the genes
-				subitem.sets<-unlist(items.subset,use.names=F)
-				subsets<-split(as.vector(subitem.names.f),subitem.sets)
-			}
-			
-			rv<-new("MgsaSets",sets=subsets)
-			
-			return(rv)
+			# copy the original 'sets' object
+			rv <- sets
+			# subset the item indices map, keeping the old item indices
+			oldindices <- sets@itemName2ItemIndex[items]
+			oldindices <- oldindices[!is.na(oldindices)]
+			# generate the new indices map
+			rv@itemName2ItemIndex <- seq_along(oldindices)
+			names(rv@itemName2ItemIndex) <- names(oldindices)
+			# subset existing item annotations
+			rv@itemAnnotations <- rv@itemAnnotations[rownames(rv@itemAnnotations) %in% items,, drop=FALSE]
+			# update items count
+			rv@numberOfItems <- length(oldindices)
+			# intersect each set with the new 'items' and update the indices of set items
+			encode <- function(x){ match(intersect(x, oldindices), oldindices) }
+			rv@sets <- lapply(rv@sets, encode)
+			# discard empty sets
+			rv@sets <- rv@sets[sapply(rv@sets,length)>0]
+			# subset set annotations
+			rv@setAnnotations <- rv@setAnnotations[rownames(rv@setAnnotations) %in% names(rv@sets),, drop=FALSE]
+			return (rv)
 		})
