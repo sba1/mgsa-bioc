@@ -889,7 +889,7 @@ static double get_score(struct context *cn)
  * @brief Proposes a new state which can be undone via undo_proposal()
  * @param cn
  */
-static void propose_state(struct context *cn, struct mt19937p *mt)
+static void propose_state(struct context *cn, struct mt19937p *mt, int sample_params)
 {
 	uint64_t possibilities = get_neighborhood_size(cn);
 
@@ -897,17 +897,19 @@ static void propose_state(struct context *cn, struct mt19937p *mt)
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
 
-	if (genrand(mt) < 0.8)
+	if (!sample_params || genrand(mt) < 0.8)
 	{
+		/* toggle inactive/active states */
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
 
 		if (proposal < cn->number_of_sets)
 		{
-			/* on/off */
+			/* on/off for a single set */
 			cn->proposal_toggle = proposal;
 			toggle_state(cn,proposal);
 		}	else
 		{
+			/* on/off for a pair of sets */
 			int active_term_pos;
 			int inactive_term_pos;
 
@@ -1095,6 +1097,9 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	parameter_prior_sample(&cn.alpha,	cn.alpha_prior, mt);
 	parameter_prior_sample(&cn.beta,	cn.beta_prior, mt);
 	parameter_prior_sample(&cn.p,		cn.p_prior, mt);
+	for (i=0;i<number_of_sets;i++) {
+		if (genrand(mt) < 0.5) toggle_state(&cn,i);
+	}
 
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
@@ -1114,7 +1119,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		 * as this is not thread-safe */
 		if (is_interrupted) break;
 
-		propose_state(&cn,mt);
+		propose_state(&cn,mt, step > 0.5 * nsteps_burnin);
 		new_score = get_score(&cn);
 		new_neighborhood_size = get_neighborhood_size(&cn);
 
