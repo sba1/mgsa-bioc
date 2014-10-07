@@ -1,18 +1,24 @@
-\name{subMgsaSets-methods}
+\name{subMgsaSets}
+\alias{subMgsaSets}
 \alias{subMgsaSets-methods}
-\alias{subMgsaSets}
+\alias{subMgsaSets,MgsaSets,character-method}
 \title{Subset of an MgsaSets}
-\description{Returns a subset of an \code{\linkS4class{MgsaSets}} in which only the required
-items are kept. Empty sets are removed.}
-\note{TODO: do we need that method? Does it work on items or item indexes?}
-\value{\code{subMgsaSets-methods}: an \code{\linkS4class{MgsaSets}}.
+\usage{
+  subMgsaSets(sets, items)
 
+  \S4method{subMgsaSets}{MgsaSets,character}(sets, items)
 }
-\arguments{\item{sets}{an \code{\linkS4class{MgsaSets}}.}
-\item{items}{\code{numeric}. The items to restrict on.}
+\arguments{
+  \item{sets}{an \code{\linkS4class{MgsaSets}}.}
+
+  \item{items}{\code{character}. The items to restrict on.}
 }
-\alias{subMgsaSets,MgsaSets,numeric-method}
-\alias{subMgsaSets}
-\usage{\S4method{subMgsaSets}{MgsaSets,numeric}(sets, items)
+\value{
+  an \code{\linkS4class{MgsaSets}}.
+}
+\description{
+  Returns a subset of an \code{\linkS4class{MgsaSets}} that
+  contains only the specified items. Empty sets are
+  removed.
 }
 

@@ -1,15 +1,22 @@
-\name{pPost-methods}
+\name{pPost}
+\alias{pPost}
 \alias{pPost-methods}
-\alias{pPost}
-\title{Posterior for beta}
-\description{Realization values, posterior estimate and standard error for the parameter p.}
-\value{\code{pPost-methods}: \code{data.frame}: realization values, posterior estimate and standard error for the parameter p.
-
-}
-\arguments{\item{x}{a \code{\linkS4class{MgsaResults}}.}
-}
 \alias{pPost,MgsaResults-method}
-\alias{pPost}
-\usage{\S4method{pPost}{MgsaResults}(x)
+\title{Posterior for beta}
+\usage{
+  pPost(x)
+
+  \S4method{pPost}{MgsaResults}(x)
+}
+\arguments{
+  \item{x}{a \code{\linkS4class{MgsaResults}}.}
+}
+\value{
+  \code{data.frame}: realization values, posterior estimate
+  and standard error for the parameter p.
+}
+\description{
+  Realization values, posterior estimate and standard error
+  for the parameter p.
 }
 

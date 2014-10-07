@@ -1,15 +1,22 @@
-\name{betaMcmcPost-methods}
+\name{betaMcmcPost}
+\alias{betaMcmcPost}
 \alias{betaMcmcPost-methods}
-\alias{betaMcmcPost}
-\title{posterior estimates of the parameter beta for each MCMC run}
-\description{Posterior estimates of the parameter beta for each MCMC run.}
-\value{\code{betaMcmcPost-methods}: \code{matrix}: Posterior estimates of the parameter beta for each MCMC run.
-
-}
-\arguments{\item{x}{a \code{\linkS4class{MgsaMcmcResults}}.}
-}
 \alias{betaMcmcPost,MgsaMcmcResults-method}
-\alias{betaMcmcPost}
-\usage{\S4method{betaMcmcPost}{MgsaMcmcResults}(x)
+\title{posterior estimates of the parameter beta for each MCMC run}
+\usage{
+  betaMcmcPost(x)
+
+  \S4method{betaMcmcPost}{MgsaMcmcResults}(x)
+}
+\arguments{
+  \item{x}{a \code{\linkS4class{MgsaMcmcResults}}.}
+}
+\value{
+  \code{matrix}: Posterior estimates of the parameter beta
+  for each MCMC run.
+}
+\description{
+  Posterior estimates of the parameter beta for each MCMC
+  run.
 }
 
