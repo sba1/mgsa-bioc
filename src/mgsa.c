@@ -533,6 +533,7 @@ struct context
 	struct prior_sample old_p;
 
 	/* The remainder is summary related and updated in record_activity() */
+	uint64_t nsamples; /**! @brief number of samples collected */
 	uint64_t *sets_activity_count;
 	struct summary *alpha_summary;
 	struct summary *beta_summary;
@@ -604,6 +605,7 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 		goto bailout;
 
 	/* Summary related, default values, some will be overwritten later */
+	cn->nsamples = 0;
 	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
 	memset(cn->sets_activity_count,0,number_of_sets * sizeof(cn->sets_activity_count[0]));
@@ -976,6 +978,8 @@ static void record_activity(struct context *cn, int64_t step, double score)
 {
 	int i,j;
 
+	cn->nsamples++;
+
 	/* Remember that sets that are active are stored in the second partition */
 	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
 		cn->sets_activity_count[cn->set_partition[i]]++;
@@ -1002,6 +1006,8 @@ static void record_activity(struct context *cn, int64_t step, double score)
 /* This in essence replicates the summary stuff in context. TODO: unify this */
 struct result
 {
+	uint64_t nsamples;
+
 	double *marg_set_activity;
 	struct summary *alpha_summary;
 	struct summary *beta_summary;
@@ -1016,7 +1022,7 @@ struct result
 };
 
 /**
- * The work horse.
+ * The work horse, the single MCMC run.
  *
  * @param sets pointer to the sets. Sets a made of observable entities.
  * @param sizes_of_sets specifies the length of each set
@@ -1024,13 +1030,16 @@ struct result
  * @param n the number of observable entities.
  * @param o indices of entities which are "on" (0 based).
  * @param lo length of o
- * @param number_of_steps defines the number of mcmc steps to be performed
+ * @param nsteps number of steps in MCMC
+ * @param nsteps_burnin number of burn-in MCMC steps
+ * @param nsteps_thin sample collecting period
  * @param alpha
  * @param beta
  * @param p
  * @param mt pre-seeded structure used for random number generation.
  */
-static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo, int64_t number_of_steps,
+static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo,
+		int64_t nsteps, int64_t nsteps_burnin, int nsteps_thin,
 		struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
 		struct mt19937p *mt)
 {
@@ -1094,7 +1103,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	printf("score=%g\n",score);
 #endif
 
-	for (step=0;step<number_of_steps;step++)
+	for (step=0;step<nsteps;step++)
 	{
 		double new_score;
 		double accept_probability;
@@ -1124,7 +1133,9 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 			neighborhood_size = new_neighborhood_size;
 		}
 
-		record_activity(&cn, step, score);
+		if ( step >= nsteps_burnin && (step - nsteps_burnin) % nsteps_thin == 0 ) {
+			record_activity(&cn, step, score);
+		}
 	}
 
 #ifdef DEBUG
@@ -1133,16 +1144,18 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 
 		for (i=0;i<cn.number_of_sets;i++)
 		{
-			printf(" Set %d: %g\n",i, (double)cn.sets_activity_count[i] / (double)number_of_steps);
+			printf(" Set %d: %g\n",i, (double)cn.sets_activity_count[i] / (double)cn.nsamples);
 		}
 	}
 #endif
+
+	res.nsamples = cn.nsamples;
 
 	if (!(res.marg_set_activity = (double*)R_alloc(number_of_sets,sizeof(res.marg_set_activity[0]))))
 		goto bailout;
 
 	for (i=0;i<cn.number_of_sets;i++)
-		res.marg_set_activity[i] = (double)cn.sets_activity_count[i] / (double)number_of_steps;
+		res.marg_set_activity[i] = (double)cn.sets_activity_count[i] / (double)cn.nsamples;
 
 	/* Note, we are using here stuff that is allocated in init_context() */
 	res.alpha_summary = cn.alpha_summary;
@@ -1181,16 +1194,18 @@ static void signal_handler(int sig)
  * @param alpha_breaks breaks used for summary. Depending on type of alpha, certain restrictions apply.
  * @param beta_breaks breaks used for summary. Depending on type of beta, certain restrictions apply.
  * @param p_breaks  breaks used for summary.  Depending on type of p, certain restrictions apply.
- * @param steps
- * @param restarts
- * @param threads
+ * @param steps number of steps in each Monte-Carlo Markov chain
+ * @param burnin number of burn-in MCMC steps
+ * @param thin sampling period, every thin-th step after the chain burn-in the parameters sample is collected
+ * @param restarts number of MCMC chains in a single thread
+ * @param threads number of parallel MCMC threads
  * @param as (1 based, just indices as o, not that the shape for the return will change in that case).
  * @return
  */
 SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		SEXP alpha, SEXP beta, SEXP p, SEXP discrete,
 		SEXP alpha_breaks, SEXP beta_breaks, SEXP p_breaks,
-		SEXP steps, SEXP restarts, SEXP threads, SEXP as)
+		SEXP steps, SEXP burnin, SEXP thin, SEXP restarts, SEXP threads, SEXP as)
 {
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 	struct summary *alpha_summary, *beta_summary, *p_summary;
@@ -1214,6 +1229,12 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	if (LENGTH(steps) != 1)
 		error("Parameter 'steps' needs to be atomic!");
 
+	if (LENGTH(burnin) != 1)
+		error("Parameter 'burnin' needs to be atomic!");
+
+	if (LENGTH(thin) != 1)
+		error("Parameter 'thin' needs to be atomic!");
+
 	if (LENGTH(restarts) != 1)
 		error("Parameter 'restarts' needs to be atomic!");
 
@@ -1227,6 +1248,8 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
 	PROTECT(steps = AS_INTEGER(steps));
+	PROTECT(burnin = AS_INTEGER(burnin));
+	PROTECT(thin = AS_INTEGER(thin));
 	PROTECT(restarts = AS_INTEGER(restarts));
 	PROTECT(threads = AS_INTEGER(threads));
 	PROTECT(as = AS_INTEGER(as));
@@ -1413,8 +1436,8 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		have_margs = have_alphas = have_betas = have_ps = 0;
 
 		/* TODO: The size is not really fixed */
-		PROTECT(res = allocVector(VECSXP,5));
-		PROTECT(names = allocVector(STRSXP,5));
+		PROTECT(res = allocVector(VECSXP,6));
+		PROTECT(names = allocVector(STRSXP,6));
 
 		GetRNGstate();
 
@@ -1443,7 +1466,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 			sgenrand(seed, &mt);
 
 			/* Run! */
-			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,INTEGER_VALUE(steps),alpha_summary,beta_summary,p_summary, &mt);
+			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,
+							INTEGER_VALUE(steps),INTEGER_VALUE(burnin),INTEGER_VALUE(thin),
+							alpha_summary,beta_summary,p_summary, &mt);
 
 			if (r[run].marg_set_activity) have_margs = 1;
 			if (r[run].alpha_summary) have_alphas = 1;
@@ -1589,13 +1614,19 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 
 			UNPROTECT(1);
 		}
+		SEXP nsamples;
+		PROTECT(nsamples = NEW_INTEGER(1));
+		INTEGER_POINTER(nsamples)[0] = r[0].nsamples;
+		SET_VECTOR_ELT(res,5,nsamples);
+		SET_STRING_ELT(names,5,mkChar("nsamples"));
+		UNPROTECT(1);
 
 		setAttrib(res,R_NamesSymbol,names);
 		UNPROTECT(2);
 	}
 
 	bailout:
-	UNPROTECT(11);
+	UNPROTECT(13);
 	return res;
 }
 

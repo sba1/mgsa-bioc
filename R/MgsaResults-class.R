@@ -144,6 +144,7 @@ setMethod(
 #' Instances of this class are used to hold the additional information 
 #' that was provided by running (possibly multiple times) an MCMC algorithm.
 #' 
+#' @slot nsamples how many samples collected per MCMC run
 #' @slot steps how many steps per MCMC run
 #' @slot restarts how many MCMC runs
 #' @slot alphaMcmcPost posterior estimates for each MCMC run of the parameter alpha
@@ -162,10 +163,28 @@ setClass(
 		"MgsaMcmcResults",
 		contains = c("MgsaResults"),
 		representation = representation(
+				nsamples = "numeric",
 				steps = "numeric",
 				restarts = "numeric",
 				alphaMcmcPost = "matrix", betaMcmcPost = "matrix", pMcmcPost ="matrix", setsMcmcPost = "matrix"
 		)
+)
+
+#### Number of samples
+#' how many samples collected per MCMC run.
+#' 
+#' @title How many samples per MCMC run collected
+#' @param x a \code{\linkS4class{MgsaMcmcResults}}.
+#' @return \code{integer}: how many samples per MCMC run collected.
+#' @rdname nsamples-methods
+#' @exportMethod nsamples
+setGeneric( "nsamples", function(x) standardGeneric( "nsamples" ) )
+
+#' @rdname nsamples-methods
+setMethod(
+		"nsamples",
+		signature=c( "MgsaMcmcResults" ),
+		function( x ) x@nsamples
 )
 
 #### Number of steps
