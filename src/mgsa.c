@@ -897,7 +897,7 @@ static void propose_state(struct context *cn, struct mt19937p *mt)
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
 
-	if (genrand(mt) < 0.5)
+	if (genrand(mt) < 0.8)
 	{
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
 
