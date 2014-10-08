@@ -466,6 +466,17 @@ static SEXP create_R_representation_of_summary(struct summary **sum, int number_
 	return l;
 }
 
+/** @brief MGSA MCMC parameters */
+struct mcmc_params
+{
+	/** @brief number of steps in MCMC */
+	int64_t nsteps;
+	/** @brief number of burn-in MCMC steps */
+	int64_t nsteps_burnin;
+	/** @brief nsteps_thin sample collecting period */
+	int nsteps_thin;
+};
+
 struct context
 {
 	/** @brief Number of sets */
@@ -888,8 +899,9 @@ static double get_score(struct context *cn)
 /**
  * @brief Proposes a new state which can be undone via undo_proposal()
  * @param cn
+ * @param step current MCMC step number
  */
-static void propose_state(struct context *cn, struct mt19937p *mt, int sample_params)
+static void propose_state(struct context *cn, struct mcmc_params *params, struct mt19937p *mt, int64_t step)
 {
 	uint64_t possibilities = get_neighborhood_size(cn);
 
@@ -897,7 +909,7 @@ static void propose_state(struct context *cn, struct mt19937p *mt, int sample_pa
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
 
-	if (!sample_params || genrand(mt) < 0.8)
+	if (step >= 0.5 * params->nsteps_burnin || genrand(mt) < 0.8)
 	{
 		/* toggle inactive/active states */
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
@@ -1032,16 +1044,14 @@ struct result
  * @param n the number of observable entities.
  * @param o indices of entities which are "on" (0 based).
  * @param lo length of o
- * @param nsteps number of steps in MCMC
- * @param nsteps_burnin number of burn-in MCMC steps
- * @param nsteps_thin sample collecting period
+ * @param params MGSA MCMC params
  * @param alpha
  * @param beta
  * @param p
  * @param mt pre-seeded structure used for random number generation.
  */
 static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo,
-		int64_t nsteps, int64_t nsteps_burnin, int nsteps_thin,
+		struct mcmc_params *params,
 		struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
 		struct mt19937p *mt)
 {
@@ -1108,7 +1118,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	printf("score=%g\n",score);
 #endif
 
-	for (step=0;step<nsteps;step++)
+	for (step=0;step<params->nsteps;step++)
 	{
 		double new_score;
 		double accept_probability;
@@ -1119,7 +1129,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 		 * as this is not thread-safe */
 		if (is_interrupted) break;
 
-		propose_state(&cn,mt, step > 0.5 * nsteps_burnin);
+		propose_state(&cn, params, mt, step);
 		new_score = get_score(&cn);
 		new_neighborhood_size = get_neighborhood_size(&cn);
 
@@ -1138,7 +1148,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 			neighborhood_size = new_neighborhood_size;
 		}
 
-		if ( step >= nsteps_burnin && (step - nsteps_burnin) % nsteps_thin == 0 ) {
+		if ( step >= params->nsteps_burnin && (step - params->nsteps_burnin) % params->nsteps_thin == 0 ) {
 			record_activity(&cn, step, score);
 		}
 	}
@@ -1252,9 +1262,6 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	PROTECT(n = AS_INTEGER(n));
 	PROTECT(o = AS_INTEGER(o));
 	PROTECT(sets = AS_LIST(sets));
-	PROTECT(steps = AS_INTEGER(steps));
-	PROTECT(burnin = AS_INTEGER(burnin));
-	PROTECT(thin = AS_INTEGER(thin));
 	PROTECT(restarts = AS_INTEGER(restarts));
 	PROTECT(threads = AS_INTEGER(threads));
 	PROTECT(as = AS_INTEGER(as));
@@ -1426,6 +1433,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	} else
 	{
 		/* Mode 2: Perform MCMC. Here, we organize the creation of the result frame and the threading */
+		struct mcmc_params params;
 		struct result *r;
 		int run;
 		int have_margs, have_alphas, have_betas, have_ps;
@@ -1446,6 +1454,13 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 
 		GetRNGstate();
 
+		PROTECT(steps = AS_INTEGER(steps));
+		PROTECT(burnin = AS_INTEGER(burnin));
+		PROTECT(thin = AS_INTEGER(thin));
+		params.nsteps = INTEGER_VALUE(steps);
+		params.nsteps_burnin = INTEGER_VALUE(burnin);
+		params.nsteps_thin = INTEGER_VALUE(thin);
+		UNPROTECT(3);
 
 #ifdef SUPPORT_OPENMP
 		{
@@ -1472,7 +1487,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 
 			/* Run! */
 			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,
-							INTEGER_VALUE(steps),INTEGER_VALUE(burnin),INTEGER_VALUE(thin),
+							&params,
 							alpha_summary,beta_summary,p_summary, &mt);
 
 			if (r[run].marg_set_activity) have_margs = 1;
@@ -1631,7 +1646,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	}
 
 	bailout:
-	UNPROTECT(13);
+	UNPROTECT(10);
 	return res;
 }
 
