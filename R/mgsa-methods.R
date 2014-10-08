@@ -7,8 +7,11 @@ NULL
 #' @noRd
 #' @useDynLib mgsa
 
-mgsa.trampoline <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, burnin=0.5*steps, thin=100, restarts=1, threads=0, as=integer(0) ){
-	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete=rep(TRUE,3), alpha.breaks=alpha, beta.breaks=beta, p.breaks=p, steps, burnin, thin, restarts, threads, as, PACKAGE="mgsa")
+mgsa.trampoline <- function(o, sets, n, alpha, beta, p, steps, burnin, thin, restarts, threads, as ){
+	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete=rep(TRUE,3),
+				alpha.breaks=alpha, beta.breaks=beta, p.breaks=p,
+				steps, burnin, thin, restarts, threads, as,
+				PACKAGE="mgsa")
 	return (res)
 }
 
@@ -42,15 +45,19 @@ mcmcSummary <- function(x){
 #' @param thin sample collecting period
 #' @param restarts defines the number MCMC of restarts.
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
-#'        corresponds to the number of available cores. 
-#' @param specifies the debug level. Mainly for internal use.
+#'        corresponds to the number of available cores.
+#' @param as if not empty, the integer vector of active sets indices. No MCMC is run in this case. Just the log likelihood for a given sets assignment is returned.
+#' @param debug specifies the debug level. Mainly for internal use.
 #' 
 #' @return an object of class \code{\link{MgsaMcmcResults}}.
 #' 
 #' @keywords internal 
 #' @noRd
  
-mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, burnin=0.5*steps, thin=100, restarts=1, threads=0, as=integer(0), debug=0)
+mgsa.wrapper <- function(o, sets, n,
+					alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets),
+					steps=1e6, burnin=0.5*steps, thin=100,
+					restarts=1, threads=0, as=integer(0), debug=0)
 {
 	# Check parameter validity.
 	if (max(alpha) > 1) stop(sprintf("Specified value %g for alpha is out of domain [0,1]",max(alpha)))
@@ -63,7 +70,9 @@ mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=se
 											as.integer(burnin),as.integer(steps)))
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
-	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p, steps=steps, burnin=burnin, thin=thin, restarts=restarts, threads=threads, as)
+	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p,
+					steps=steps, burnin=burnin, thin=thin,
+					restarts=restarts, threads=threads, as=as)
 	
 	# just return the score (this function is quite overloaded now..., perhaps it would be better to make a separate function)
 	if (length(as) > 0)
@@ -74,7 +83,7 @@ mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=se
 	if (debug > 0)
 	{
 		print("Raw results:")
-		str(raw);	
+		print(str(raw))	
 	}
 
 	## wrap raw results into a MgsaResults object
@@ -115,21 +124,11 @@ mgsa.wrapper <- function(o, sets, n, alpha=seq(0.01,0.3, length.out=10), beta=se
 #' @param sets a list of sets. Each set is a vector that contains all the items. The vector
 #'        can be of any data type, for instance, integers or characters.
 #' @param population defines the set of item that should be considered for this calculation.
-#' @param alpha
-#' @param beta
-#' @param p 
-#' @param steps number of steps in each Monte-Carlo Markov chain
-#' @param burnin number of burn-in MCMC steps
-#' @param thin sample collecting period
-#' @param restarts defines the number of restarts.
-#' @param threads defines number of threads to be used. Defaults to 0 which means that it
-#'        corresponds to the number of available cores.
-#' @param as define the active sets. No MCMC is run in this case. Just the log likelihood is returned.  
 #'
 #' @keywords internal
 #' @noRd
  
-mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), steps=1e6, burnin=0.5*steps, thin=100, restarts=1, threads=0, as=integer(0), debug=0){
+mgsa.main <- function(o, sets, population=NULL, debug=0, ...){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
@@ -155,7 +154,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 		cat(paste("number of sets:",length(sets),"\n"))
 	}
 
-	return(mgsa.wrapper(o,sets,length(population),alpha,beta,p,steps,restarts,threads,as,debug))
+	return(mgsa.wrapper(o,sets,length(population),debug=debug,...))
 }
 
 
@@ -190,17 +189,17 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @param steps The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater. 
 #' @param steps number of steps in each Monte-Carlo Markov chain
 #' @param burnin number of burn-in MCMC steps, until sample collecting begins. \code{integer} of length 1. A recommended value is half of total MCMC steps.
-#' @param thin sample collecting period. \code{integer} of length 1. A recommended value is 100 to avoid autocorrelation of subsequently collected samples.
+#' @param thin sample collecting period. \code{integer} of length 1. A recommended value is 100 to reduce autocorrelation of subsequently collected samples.
 #' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
 #' @param threads The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.
 #' 
 #' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
 #' @return An \code{\link{MgsaMcmcResults}} object.
 #' @usage mgsa(
-#' 				o, sets, population=NULL,
-#' 				alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
-#' 				p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10),
-#' 				steps=1e6, restarts=5, threads=0
+#'        o, sets, population=NULL,
+#'        alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
+#'        p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10),
+#'        steps=1e6, burnin=0.5*steps, thin=100, restarts=5, threads=0
 #' )
 #' 
 #' @seealso \code{\link{MgsaResults}}, \code{\link{MgsaMcmcResults}}
@@ -221,7 +220,7 @@ mgsa.main <- function(o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=1
 #' @rdname mgsa-methods
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10), steps=1e6, burnin=0.5*steps, thin=100, restarts=5, threads=0){
+		def=function( o, sets, population=NULL, ...){
 			standardGeneric("mgsa")
 		}
 )
@@ -231,10 +230,7 @@ setGeneric(
 setMethod(
 		f="mgsa",
 		signature = c(o="integer", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
-		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
-		}
+		def = mgsa.main
 )
 
 # o numeric and sets list
@@ -242,10 +238,7 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="numeric", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
-		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
-		}
+		def = mgsa.main
 )
 
 # o character and sets list
@@ -253,10 +246,7 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
-		{
-			mgsa.main(o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
-		}
+		def = mgsa.main
 )
 
 
@@ -265,9 +255,8 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="logical", sets="list"),
-		def=function( o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads) {
-			if (is.null(population)) population <- 1:length(o)
-			mgsa( which(o), sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
+		def=function( o, sets, ...) {
+			mgsa( which(o), sets, ...)
 		}
 )
 
@@ -276,7 +265,7 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
-		def=function( o, sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads) {
+		def=function( o, sets, population=NULL, ...) {
 			
 			items<-itemIndices(sets,o)
 			items.nas<-sum(is.na(items))
@@ -292,13 +281,12 @@ setMethod(
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, alpha, beta, p, steps, burnin, thin, restarts, threads)
-				
+				rv = mgsa.wrapper(items, sets@sets, length(items), ...)
 			}
 			else
 			{
 				population<-itemIndices(sets,population)
-				rv = mgsa ( items, sets@sets, population, alpha, beta, p, steps, burnin, thin, restarts, threads)
+				rv = mgsa.main( items, sets@sets, population, ...)
 			}
 			rv@setsResults = cbind(setsResults(rv),  setAnnotations(sets)[ rownames(setsResults(rv) ), , drop=FALSE] )
 			return( rv )
