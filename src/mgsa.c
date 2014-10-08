@@ -475,6 +475,8 @@ struct mcmc_params
 	int64_t nsteps_burnin;
 	/** @brief nsteps_thin sample collecting period */
 	int nsteps_thin;
+	/** @brief the frequency of set active state flipping Gibbs step */
+	double flip_freq;
 };
 
 struct context
@@ -909,7 +911,7 @@ static void propose_state(struct context *cn, struct mcmc_params *params, struct
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
 
-	if (step >= 0.5 * params->nsteps_burnin || genrand(mt) < 0.8)
+	if (step >= 0.5 * params->nsteps_burnin || genrand(mt) <= params->flip_freq)
 	{
 		/* toggle inactive/active states */
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
@@ -1212,6 +1214,7 @@ static void signal_handler(int sig)
  * @param steps number of steps in each Monte-Carlo Markov chain
  * @param burnin number of burn-in MCMC steps
  * @param thin sampling period, every thin-th step after the chain burn-in the parameters sample is collected
+ * @param flip_freq the frequency of set flipping Gibbs step
  * @param restarts number of MCMC chains in a single thread
  * @param threads number of parallel MCMC threads
  * @param as (1 based, just indices as o, not that the shape for the return will change in that case).
@@ -1220,7 +1223,8 @@ static void signal_handler(int sig)
 SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		SEXP alpha, SEXP beta, SEXP p, SEXP discrete,
 		SEXP alpha_breaks, SEXP beta_breaks, SEXP p_breaks,
-		SEXP steps, SEXP burnin, SEXP thin, SEXP restarts, SEXP threads, SEXP as)
+		SEXP steps, SEXP burnin, SEXP thin, SEXP flip_freq,
+		SEXP restarts, SEXP threads, SEXP as)
 {
 	struct parameter_prior *alpha_prior, *beta_prior, *p_prior;
 	struct summary *alpha_summary, *beta_summary, *p_summary;
@@ -1249,6 +1253,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 
 	if (LENGTH(thin) != 1)
 		error("Parameter 'thin' needs to be atomic!");
+
+	if (LENGTH(flip_freq) != 1)
+		error("Parameter 'flip_freq' needs to be atomic!");
 
 	if (LENGTH(restarts) != 1)
 		error("Parameter 'restarts' needs to be atomic!");
@@ -1457,10 +1464,12 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		PROTECT(steps = AS_INTEGER(steps));
 		PROTECT(burnin = AS_INTEGER(burnin));
 		PROTECT(thin = AS_INTEGER(thin));
+		PROTECT(flip_freq = AS_NUMERIC(flip_freq));
 		params.nsteps = INTEGER_VALUE(steps);
 		params.nsteps_burnin = INTEGER_VALUE(burnin);
 		params.nsteps_thin = INTEGER_VALUE(thin);
-		UNPROTECT(3);
+		params.flip_freq = NUMERIC_VALUE(flip_freq);
+		UNPROTECT(4);
 
 #ifdef SUPPORT_OPENMP
 		{

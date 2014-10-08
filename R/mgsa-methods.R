@@ -7,10 +7,11 @@ NULL
 #' @noRd
 #' @useDynLib mgsa
 
-mgsa.trampoline <- function(o, sets, n, alpha, beta, p, steps, burnin, thin, restarts, threads, as ){
+mgsa.trampoline <- function(o, sets, n, alpha, beta, p, steps, burnin, thin, flip.freq, restarts, threads, as ){
 	res <- .Call("mgsa_mcmc", sets, n, o, alpha, beta, p, discrete=rep(TRUE,3),
 				alpha.breaks=alpha, beta.breaks=beta, p.breaks=p,
-				steps, burnin, thin, restarts, threads, as,
+				steps, burnin, thin, flip.freq,
+				restarts, threads, as,
 				PACKAGE="mgsa")
 	return (res)
 }
@@ -57,6 +58,7 @@ mcmcSummary <- function(x){
 mgsa.wrapper <- function(o, sets, n,
 					alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10), p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets),
 					steps=1e6, burnin=0.5*steps, thin=100,
+					flip.freq=0.8,
 					restarts=1, threads=0, as=integer(0), debug=0)
 {
 	# Check parameter validity.
@@ -68,10 +70,12 @@ mgsa.wrapper <- function(o, sets, n,
 	if (min(p) < 0) stop(sprintf("Specified value %g for p is out of domain [0,1]",min(p)))
 	if (burnin > steps) stop(sprintf("Specified number of burn-in steps %d is greater than the total steps number %d",
 											as.integer(burnin),as.integer(steps)))
+	if (flip.freq <= 0 || flip.freq > 1) stop(sprintf("The specified frequency %g of sets state flipping Gibbs step must by in (0,1]"), flip.freq)
+
 	## call to core function on non-empty sets only
 	isempty  <- sapply(sets,length) == 0
 	raw <- mgsa.trampoline(o, sets[!isempty], n, alpha=alpha, beta=beta, p=p,
-					steps=steps, burnin=burnin, thin=thin,
+					steps=steps, burnin=burnin, thin=thin, flip.freq=flip.freq,
 					restarts=restarts, threads=threads, as=as)
 	
 	# just return the score (this function is quite overloaded now..., perhaps it would be better to make a separate function)
@@ -192,6 +196,7 @@ mgsa.main <- function(o, sets, population=NULL, debug=0, ...){
 #' @param thin sample collecting period. \code{integer} of length 1. A recommended value is 100 to reduce autocorrelation of subsequently collected samples.
 #' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
 #' @param threads The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.
+#' @param flip.freq The frequency of MCMC Gibbs step that randomly flips the state of a random set from active to inactive or vice versa. \code{numeric} from (0,1].
 #' 
 #' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
 #' @return An \code{\link{MgsaMcmcResults}} object.
