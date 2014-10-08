@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#ifdef HAVE_OPENMP
+#ifdef SUPPORT_OPENMP
 #include <omp.h>
 #endif
 
@@ -1419,7 +1419,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 		GetRNGstate();
 
 
-#ifdef HAVE_OPENMP
+#ifdef SUPPORT_OPENMP
 		{
 			int ithreads = INTEGER_VALUE(threads);
 			if (ithreads != 0)
