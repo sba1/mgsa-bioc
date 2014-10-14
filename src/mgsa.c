@@ -21,15 +21,15 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#ifdef SUPPORT_OPENMP
-#include <omp.h>
-#endif
-
 #include <R.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 #include <R_ext/Utils.h>
+
+#ifdef SUPPORT_OPENMP
+#include <omp.h>
+#endif
 
 #include "mt19937p/mt19937p.c"
 
