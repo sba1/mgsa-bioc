@@ -286,7 +286,7 @@ setMethod(
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				rv = mgsa.wrapper(items, sets@sets, length(items), ...)
+				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, ...)
 			}
 			else
 			{
