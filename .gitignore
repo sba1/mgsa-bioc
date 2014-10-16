@@ -1,0 +1,8 @@
+.cproject
+.project
+*.o
+*.so
+*.pdf
+config.log
+config.status
+src/Makevars
