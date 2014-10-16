@@ -11,6 +11,8 @@ that was provided by running (possibly multiple times) an MCMC algorithm.}
 \section{Slots}{
 
 \itemize{
+  \item{nsamples}{how many samples collected per MCMC run}
+
   \item{steps}{how many steps per MCMC run}
 
   \item{restarts}{how many MCMC runs}
