@@ -132,8 +132,8 @@ mgsa.wrapper <- function(o, sets, n,
 #'
 #' @keywords internal
 #' @noRd
- 
-mgsa.main <- function(o, sets, population=NULL, debug=0, ...){
+
+mgsa.main.debug <- function(o, sets, population=NULL, debug=0, ...){
 	
 	if( any( sapply(sets, class)!=class(o) ) ) stop("All entries in 'sets' must have the same class as 'o'.")
 	
@@ -162,6 +162,23 @@ mgsa.main <- function(o, sets, population=NULL, debug=0, ...){
 	return(mgsa.wrapper(o,sets,length(population),debug=debug,...))
 }
 
+#'
+#' The main function that treats the case of character and integer inputs. This delegates
+#' to mgsa.main.debug.
+#' 
+#' @param o a vector that defines the items that are observed. Items can be anything that
+#'        occurs in sets.
+#' @param sets a list of sets. Each set is a vector that contains all the items. The vector
+#'        can be of any data type, for instance, integers or characters.
+#' @param population defines the set of item that should be considered for this calculation.
+#'
+#' @keywords internal
+#' @noRd
+
+mgsa.main <- function(o, sets, population=NULL, ...){
+	return(mgsa.main.debug(o,sets,population,...))
+}
+
 
 ## S4 implementation: generic declaration
 #'  
@@ -188,24 +205,21 @@ mgsa.main <- function(o, sets, population=NULL, debug=0, ...){
 #' @param sets The sets. It can be an \code{\linkS4class{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
 #' @param population The total population. Optional. A \code{numeric}, \code{integer} or \code{character} vector.
 #' Default to \code{NULL}. See details.
-#' @param alpha Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}. 
-#' @param beta Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.
-#' @param p Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.
-#' @param steps The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater. 
-#' @param burnin The number of burn-in MCMC steps, until sample collecting begins. \code{integer} of length 1. A recommended value is half of total MCMC steps.
-#' @param thin The sample collecting period. An \code{integer} of length 1. A recommended value is 100 to reduce autocorrelation of subsequently collected samples.
-#' @param restarts The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.
-#' @param threads The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.
-#' @param flip.freq The frequency of MCMC Gibbs step that randomly flips the state of a random set from active to inactive or vice versa. \code{numeric} from (0,1].
+#' @param ... Optional arguments that are passed to the methods. Supported parameters are
+#' \describe{
+#'   \item{\code{alpha}}{Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}.}
+#'   \item{\code{beta}}{Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.}
+#'   \item{\code{p}}{Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.}
+#'   \item{\code{steps}}{The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater.}
+#'   \item{\code{burnin}}{The number of burn-in MCMC steps, until sample collecting begins. \code{integer} of length 1. A recommended value is half of total MCMC steps.}
+#'   \item{\code{thin}}{The sample collecting period. An \code{integer} of length 1. A recommended value is 100 to reduce autocorrelation of subsequently collected samples.}
+#'   \item{\code{flip.freq}}{The frequency of MCMC Gibbs step that randomly flips the state of a random set from active to inactive or vice versa. \code{numeric} from (0,1].}
+#'   \item{\code{restarts}}{The number of different runs of the MCMC sampler. \code{integer} of length 1. Must be greater or equal to 1. A recommended value is 5 or greater.}
+#'   \item{\code{threads}}{The number of threads that should be used for concurrent restarts. A value of 0 means to use all available cores. Default to 0.}
+#' }
 #' 
 #' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
 #' @return An \code{\link{MgsaMcmcResults}} object.
-#' @usage mgsa(
-#'        o, sets, population=NULL,
-#'        alpha=seq(0.01,0.3, length.out=10), beta=seq(0.1,0.8, length.out=10),
-#'        p=seq( min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10),
-#'        steps=1e6, burnin=0.5*steps, thin=100, restarts=5, threads=0, flip.freq=0.8
-#' )
 #' 
 #' @seealso \code{\link{MgsaResults}}, \code{\link{MgsaMcmcResults}}
 #' @examples
