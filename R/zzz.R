@@ -1,3 +1,3 @@
-.Last.lib <- function() {
-  library.dynam.unload("mgsa", paste(.libPaths(),"/mgsa",sep=""))
+.onUnload <- function(libpath) {
+  library.dynam.unload("mgsa", libpath)
 }
