@@ -148,10 +148,10 @@ readGAF = function(filename, evidence=NULL, aspect=c("P", "F", "C")){
 			)
 	)
 	
-	goa = subset(goa, aspect.code %in% aspect)
+	goa <- goa[goa$aspect.code %in% aspect, ]
 	
 	if(!is.null(evidence))
-		goa = subset(goa, evidence.code %in% evidence)
+		goa <- goa[goa$evidence.code %in% evidence, ]
 	
 	if(nrow(goa)==0){
 		warning("No genes with annotations. Are the evidence codes too restrictive?")
