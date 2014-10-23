@@ -491,10 +491,17 @@ struct context
 	/** @brief The definitions of the sets */
 	int **sets;
 
-	/** @brief Array of size "number_of_sets" indicating the state of the sets (active or not active) */
+	/** @brief Number of enabled sets (i.e the ones that could be activated);
+		the rest are fixed in inactive state */
+	int number_of_enabled_sets;
+
+	/** @brief Array of size "number_of_enabled_sets" containing the indices of enabled sets */
+	int *enabled_sets;
+
+	/** @brief Array of size "number_of_enabled_sets" indicating the state of the enabled sets (active or inactive) */
 	int *sets_active;
 
-	/** @brief number of active sets */
+	/** @brief number of inactive enabled sets */
 	int number_of_inactive_sets;
 
 	/**
@@ -573,9 +580,9 @@ struct context
  * @param sets
  * @param sizes_of_sets
  * @param number_of_sets
- * @param n number of items
- * @param o
- * @param lo number of items that are observed as true (<=n)
+ * @param n total number of items
+ * @param o indices of observed items
+ * @param lo number of observed items (<=n)
  * @return
  */
 static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo)
@@ -590,21 +597,6 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	cn->sizes_of_sets = sizes_of_sets;
 	cn->number_of_observable = n;
 
-	/* Do the lazy stuff, i.e., allocate memory and intialize with meaningful defaults */
-	if (!(cn->sets_active = (int*)R_alloc(number_of_sets,sizeof(cn->sets_active[0]))))
-		goto bailout;
-	memset(cn->sets_active,0,number_of_sets * sizeof(cn->sets_active[0]));
-	if (!(cn->set_partition = (int*)R_alloc(number_of_sets,sizeof(cn->set_partition[0]))))
-		goto bailout;
-	if (!(cn->position_of_set_in_partition = (int*)R_alloc(number_of_sets,sizeof(cn->position_of_set_in_partition[0]))))
-		goto bailout;
-	for (i=0;i<number_of_sets;i++)
-	{
-		cn->set_partition[i] = i;
-		cn->position_of_set_in_partition[i] = i;
-	}
-	cn->number_of_inactive_sets = number_of_sets;
-
 	if (!(cn->hidden_count = (int*)R_alloc(n,sizeof(cn->hidden_count[0]))))
 		goto bailout;
 	memset(cn->hidden_count,0,n * sizeof(cn->hidden_count[0]));
@@ -615,14 +607,45 @@ static int init_context(struct context *cn, int **sets, int *sizes_of_sets, int 
 	for (i=0;i<lo;i++)
 		cn->observable[o[i]] = 1;
 
-	if (!(cn->max_score_sets_active = (int*)R_alloc(number_of_sets,sizeof(cn->max_score_sets_active[0]))))
+	/* allocate memory for enabled sets; use number_of_sets,
+		although the actual number of enabled sets could be lower */
+	if (!(cn->enabled_sets = (int*)R_alloc(number_of_sets,sizeof(cn->enabled_sets[0]))))
+		goto bailout;
+	memset(cn->enabled_sets, 0, number_of_sets * sizeof(cn->sets_active[0]));
+	/* identify and count enabled sets */
+	cn->number_of_enabled_sets = 0;
+	for (i=0; i<number_of_sets; ++i) {
+		int el_ix;
+		for (el_ix=0; el_ix<sizes_of_sets[i]; ++el_ix) {
+			if ( cn->observable[sets[i][el_ix]] ) {
+				// there's observed element, enable the set
+				cn->enabled_sets[cn->number_of_enabled_sets++] = i;
+				break;
+			}
+		}
+	}
+
+	/* initialize the active sets mask and partition */
+	if (!(cn->sets_active = (int*)R_alloc(cn->number_of_enabled_sets,sizeof(cn->sets_active[0]))))
+		goto bailout;
+	memset(cn->sets_active,0,cn->number_of_enabled_sets * sizeof(cn->sets_active[0]));
+	if (!(cn->set_partition = (int*)R_alloc(cn->number_of_enabled_sets,sizeof(cn->set_partition[0]))))
+		goto bailout;
+	if (!(cn->position_of_set_in_partition = (int*)R_alloc(cn->number_of_enabled_sets,sizeof(cn->position_of_set_in_partition[0]))))
+		goto bailout;
+	for (i=0;i<cn->number_of_enabled_sets;i++) {
+		cn->set_partition[i] = i;
+		cn->position_of_set_in_partition[i] = i;
+	}
+	cn->number_of_inactive_sets = cn->number_of_enabled_sets;
+	if (!(cn->max_score_sets_active = (int*)R_alloc(cn->number_of_enabled_sets,sizeof(cn->max_score_sets_active[0]))))
 		goto bailout;
 
 	/* Summary related, default values, some will be overwritten later */
 	cn->nsamples = 0;
-	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(number_of_sets,sizeof(cn->sets_activity_count[0]))))
+	if (!(cn->sets_activity_count = (uint64_t *)R_alloc(cn->number_of_enabled_sets,sizeof(cn->sets_activity_count[0]))))
 		goto bailout;
-	memset(cn->sets_activity_count,0,number_of_sets * sizeof(cn->sets_activity_count[0]));
+	memset(cn->sets_activity_count,0,cn->number_of_enabled_sets * sizeof(cn->sets_activity_count[0]));
 #if 0
 	if (!(cn->alpha_summary = new_summary_for_cont_var(0,1,10)))
 		goto bailout;
@@ -693,19 +716,21 @@ static void hidden_member_deactivated(struct context *cn, int member)
  * @brief add a new set.
  *
  * @param cn
- * @param to_add
+ * @param to_add index of set in cn->enabled_sets array
  */
 static void add_set(struct context *cn, int to_add)
 {
 	int i; /* the usual dummy */
+	int set_ix; /* the index of set in cn->sets */
 
 	if (cn->sets_active[to_add]) return;
 	cn->sets_active[to_add] = 1;
 
 	/* Go through all associations of the term and increase the activation count */
-	for (i=0;i<cn->sizes_of_sets[to_add];i++)
+	set_ix = cn->enabled_sets[to_add];
+	for (i=0;i<cn->sizes_of_sets[set_ix];i++)
 	{
-		int member = cn->sets[to_add][i];
+		int member = cn->sets[set_ix][i];
 		if (!cn->hidden_count[member])
 		{
 			/* A not yet active member is about to be activated */
@@ -740,9 +765,9 @@ static void add_set(struct context *cn, int to_add)
 			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
 		}
 		printf("Add of %d produced following sets to be active:\n",to_add);
-		if (cn->number_of_sets - cn->number_of_inactive_sets == 0)
+		if (cn->number_of_enabled_sets - cn->number_of_inactive_sets == 0)
 			printf(" empty list\n");
-		for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
+		for (i=cn->number_of_inactive_sets;i<cn->number_of_enabled_sets;i++)
 		{
 			int elem = cn->set_partition[i];
 			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
@@ -756,19 +781,21 @@ static void add_set(struct context *cn, int to_add)
  * @brief remove a set.
  *
  * @param cn
- * @param to_remove
+ * @param to_remove index of set in cn->enabled_sets array
  */
 static void remove_set(struct context *cn, int to_remove)
 {
 	int i;
+	int set_ix; // set index in cn->sets
 
 	if (!cn->sets_active[to_remove]) return;
 	cn->sets_active[to_remove] = 0;
 
 	/* Go through all associations of the term and decrease the activation count */
-	for (i=0;i<cn->sizes_of_sets[to_remove];i++)
+	set_ix = cn->enabled_sets[to_remove];
+	for (i=0;i<cn->sizes_of_sets[set_ix];i++)
 	{
-		int member = cn->sets[to_remove][i];
+		int member = cn->sets[set_ix][i];
 		if (cn->hidden_count[member] == 1)
 		{
 			/* A active member is about to be deactivated  */
@@ -780,7 +807,7 @@ static void remove_set(struct context *cn, int to_remove)
 	/* Converse of above. Here the removed set, which belonged to the 1 partition,
 	 * is moved at the end of the 0 partition while the element at that place is
 	 * pushed to the original position of the removed element. */
-	if (cn->number_of_inactive_sets != (cn->number_of_sets - 1))
+	if (cn->number_of_inactive_sets != (cn->number_of_enabled_sets - 1))
 	{
 		int pos = cn->position_of_set_in_partition[to_remove];
 		int e1 = cn->set_partition[cn->number_of_inactive_sets];
@@ -803,9 +830,9 @@ static void remove_set(struct context *cn, int to_remove)
 			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
 		}
 		printf("Remove of %d produced following sets to be active:\n",to_remove);
-		if (cn->number_of_sets - cn->number_of_inactive_sets == 0)
+		if (cn->number_of_enabled_sets - cn->number_of_inactive_sets == 0)
 			printf(" empty list\n");
-		for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
+		for (i=cn->number_of_inactive_sets;i<cn->number_of_enabled_sets;i++)
 		{
 			int elem = cn->set_partition[i];
 			printf(" %d at pos %d (should be %d)\n",elem,cn->position_of_set_in_partition[elem],i);
@@ -876,7 +903,7 @@ static double get_p(struct context *cn)
 static uint64_t get_neighborhood_size(struct context *cn)
 {
 	/* First part accounts for the toggles, second part for the exchanges */
-	return cn->number_of_sets + cn->number_of_inactive_sets * (cn->number_of_sets - cn->number_of_inactive_sets);
+	return cn->number_of_enabled_sets + cn->number_of_inactive_sets * (cn->number_of_enabled_sets - cn->number_of_inactive_sets);
 
 }
 
@@ -895,7 +922,8 @@ static double get_score(struct context *cn)
 	double score = log(alpha) * cn->n10 + log1p(-alpha) * cn->n00 + log1p(-beta)* cn->n11 + log(beta)*cn->n01;
 
 	/* apply prior */
-	score += log(p) * (cn->number_of_sets - cn->number_of_inactive_sets) + log1p(-p) * cn->number_of_inactive_sets;
+	score += log(p) * (cn->number_of_enabled_sets - cn->number_of_inactive_sets)
+			+ log1p(-p) * (cn->number_of_sets - cn->number_of_enabled_sets + cn->number_of_inactive_sets);
 	return score;
 }
 
@@ -917,7 +945,7 @@ static void propose_state(struct context *cn, struct mcmc_params *params, struct
 		/* toggle inactive/active states */
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
 
-		if (proposal < cn->number_of_sets)
+		if (proposal < cn->number_of_enabled_sets)
 		{
 			/* on/off for a single set */
 			cn->proposal_toggle = proposal;
@@ -928,7 +956,7 @@ static void propose_state(struct context *cn, struct mcmc_params *params, struct
 			int active_term_pos;
 			int inactive_term_pos;
 
-			proposal -= cn->number_of_sets;
+			proposal -= cn->number_of_enabled_sets;
 
 			active_term_pos = (int)(proposal / cn->number_of_inactive_sets) +  cn->number_of_inactive_sets;
 			inactive_term_pos = (int)(proposal % cn->number_of_inactive_sets);
@@ -998,7 +1026,7 @@ static void record_activity(struct context *cn, int64_t step, double score)
 	cn->nsamples++;
 
 	/* Remember that sets that are active are stored in the second partition */
-	for (i=cn->number_of_inactive_sets;i<cn->number_of_sets;i++)
+	for (i=cn->number_of_inactive_sets;i<cn->number_of_enabled_sets;i++)
 		cn->sets_activity_count[cn->set_partition[i]]++;
 
 	add_to_summary(cn->alpha_summary,&cn->alpha);
@@ -1014,9 +1042,9 @@ static void record_activity(struct context *cn, int64_t step, double score)
 		cn->max_score_beta = get_beta(cn);
 		cn->max_score_p = get_p(cn);
 
-		for (i=cn->number_of_inactive_sets,j=0;i<cn->number_of_sets;i++,j++)
+		for (i=cn->number_of_inactive_sets,j=0;i<cn->number_of_enabled_sets;i++,j++)
 			cn->max_score_sets_active[j] = cn->set_partition[i];
-		cn->max_score_sets_active_length = cn->number_of_sets - cn->number_of_inactive_sets;
+		cn->max_score_sets_active_length = cn->number_of_enabled_sets - cn->number_of_inactive_sets;
 	}
 }
 
@@ -1115,8 +1143,8 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	 * This should be made optional. Note however that we expect only few
 	 * terms to be on, so randomly switching on/off term seems not so
 	 * appropriate */
-#if 0
-	for (i=0;i<number_of_sets;i++) {
+#if 1
+	for (i=0;i<cn.number_of_enabled_sets;i++) {
 		if (genrand(mt) < 0.5) toggle_state(&cn,i);
 	}
 #endif
@@ -1167,7 +1195,7 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	{
 		int i;
 
-		for (i=0;i<cn.number_of_sets;i++)
+		for (i=0;i<cn.number_of_enabled_sets;i++)
 		{
 			printf(" Set %d: %g\n",i, (double)cn.sets_activity_count[i] / (double)cn.nsamples);
 		}
@@ -1178,9 +1206,10 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 
 	if (!(res.marg_set_activity = (double*)R_alloc(number_of_sets,sizeof(res.marg_set_activity[0]))))
 		goto bailout;
+	memset(res.marg_set_activity, 0, number_of_sets*sizeof(res.marg_set_activity[0]));
 
-	for (i=0;i<cn.number_of_sets;i++)
-		res.marg_set_activity[i] = (double)cn.sets_activity_count[i] / (double)cn.nsamples;
+	for (i=0;i<cn.number_of_enabled_sets;i++)
+		res.marg_set_activity[cn.enabled_sets[i]] = (double)cn.sets_activity_count[i] / (double)cn.nsamples;
 
 	/* Note, we are using here stuff that is allocated in init_context() */
 	res.alpha_summary = cn.alpha_summary;
@@ -1670,7 +1699,9 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 
 static void print_context(struct context *cn)
 {
-	printf("n00=%d n01=%d n10=%d n11=%d num_active=%d\n",cn->n00,cn->n01,cn->n10,cn->n11,cn->number_of_sets - cn->number_of_inactive_sets);
+	printf("n00=%d n01=%d n10=%d n11=%d num_active=%d\n",
+			cn->n00,cn->n01,cn->n10,cn->n11,
+			cn->number_of_enabled_sets - cn->number_of_inactive_sets);
 }
 
 /**
