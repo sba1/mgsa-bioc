@@ -207,11 +207,12 @@ static void parameter_prior_sample(struct prior_sample *sample, struct parameter
 
 	if (prior->uniform_continuous)
 	{
-		sample->u.continuous_value = prior->uniform_continous_lower + (rnd - prior->uniform_continous_lower)*(prior->uniform_continous_upper - prior->uniform_continous_lower);
+		sample->u.continuous_value = prior->uniform_continous_lower + rnd * (prior->uniform_continous_upper - prior->uniform_continous_lower);
 	} else
 	{
 		sample->u.discrete_index = rnd * prior->number_of_states;
-		sample->u.discrete_index %= prior->number_of_states;
+		if ( sample->u.discrete_index >= prior->number_of_states )
+			sample->u.discrete_index = prior->number_of_states - 1;
 	}
 }
 
@@ -891,10 +892,10 @@ static double get_score(struct context *cn)
 	double beta = get_beta(cn);
 	double p = get_p(cn);
 
-	double score = log(alpha) * cn->n10 + log(1.0-alpha) * cn->n00 + log(1-beta)* cn->n11 + log(beta)*cn->n01;
+	double score = log(alpha) * cn->n10 + log1p(-alpha) * cn->n00 + log1p(-beta)* cn->n11 + log(beta)*cn->n01;
 
 	/* apply prior */
-	score += log(p) * (cn->number_of_sets - cn->number_of_inactive_sets) + log(1.0-p) * cn->number_of_inactive_sets;
+	score += log(p) * (cn->number_of_sets - cn->number_of_inactive_sets) + log1p(-p) * cn->number_of_inactive_sets;
 	return score;
 }
 
