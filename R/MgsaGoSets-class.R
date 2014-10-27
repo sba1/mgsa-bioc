@@ -49,7 +49,7 @@ createMgsaGoSets<-function(go.ids,items)
 	drv <- DBI::dbDriver("SQLite")
 	annotation.file <- tempfile()
 	annotation.con <- DBI::dbConnect(drv, dbname = annotation.file)
-	DBI::dbWriteTable(annotation.con,"ga",data.frame(go.id=go.ids,items=items),row.names=0)
+	DBI::dbWriteTable(annotation.con,"ga",data.frame(go_id=go.ids,items=items),row.names=0)
 	
 	# We now attach the GO Database
 	attachSQL = paste("ATTACH '", GO.db::GO_dbfile(), "' AS goDB;", sep = "")
