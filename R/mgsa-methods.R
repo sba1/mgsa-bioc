@@ -40,7 +40,7 @@ mcmcSummary <- function(x){
 #' @param n defines the total number of items. 
 #' @param alpha
 #' @param beta
-#' @param p 
+#' @param p the grid defining the probability of a set to be active.
 #' @param steps number of steps in each Monte-Carlo Markov chain
 #' @param burnin number of burn-in MCMC steps
 #' @param thin sample collecting period
