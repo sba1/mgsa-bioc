@@ -240,7 +240,7 @@ mgsa.main <- function(o, sets, population=NULL, ...){
 #' @rdname mgsa-methods
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, ...){
+		def=function( o, sets, population=NULL, p=seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10), ...){
 			standardGeneric("mgsa")
 		}
 )
