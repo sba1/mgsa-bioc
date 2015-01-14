@@ -206,11 +206,11 @@ mgsa.main <- function(o, sets, population=NULL, ...){
 #' @param sets The sets. It can be an \code{\linkS4class{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
 #' @param population The total population. Optional. A \code{numeric}, \code{integer} or \code{character} vector.
 #' Default to \code{NULL}. See details.
+#' @param p Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1].
 #' @param ... Optional arguments that are passed to the methods. Supported parameters are
 #' \describe{
 #'   \item{\code{alpha}}{Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}.}
 #'   \item{\code{beta}}{Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.}
-#'   \item{\code{p}}{Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.}
 #'   \item{\code{steps}}{The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater.}
 #'   \item{\code{burnin}}{The number of burn-in MCMC steps, until sample collecting begins. \code{integer} of length 1. A recommended value is half of total MCMC steps.}
 #'   \item{\code{thin}}{The sample collecting period. An \code{integer} of length 1. A recommended value is 100 to reduce autocorrelation of subsequently collected samples.}
