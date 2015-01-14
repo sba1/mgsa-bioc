@@ -47,7 +47,8 @@ mcmcSummary <- function(x){
 #' @param restarts defines the number MCMC of restarts.
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
 #'        corresponds to the number of available cores.
-#' @param as if not empty, the integer vector of active sets indices. No MCMC is run in this case. Just the log likelihood for a given sets assignment is returned.
+#' @param as if not empty, the integer vector of active sets indices. No MCMC is run in this case.
+#'        Just the log likelihood for a given sets assignment is returned.
 #' @param debug specifies the debug level. Mainly for internal use.
 #' 
 #' @return an object of class \code{\link{MgsaMcmcResults}}.
