@@ -39,3 +39,13 @@ test_that("mgsa() runs with integer items", {
   
   expect_is( mgsa.result, 'MgsaMcmcResults' )
 } )
+
+test_that("mgsa() works with explict p", {
+
+  mgsa.simple <- new( "MgsaSets", sets=test.sets,
+                      itemAnnotations = test.item_anno,
+                      setAnnotations = test.set_anno )
+  mgsa.result <- mgsa( 1:4, mgsa.simple@sets, debug=0, p = 0.2 )
+
+  expect_is( mgsa.result, 'MgsaMcmcResults' )
+} )

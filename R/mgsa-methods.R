@@ -40,14 +40,15 @@ mcmcSummary <- function(x){
 #' @param n defines the total number of items. 
 #' @param alpha
 #' @param beta
-#' @param p 
+#' @param p the grid defining the probability of a set to be active.
 #' @param steps number of steps in each Monte-Carlo Markov chain
 #' @param burnin number of burn-in MCMC steps
 #' @param thin sample collecting period
 #' @param restarts defines the number MCMC of restarts.
 #' @param threads defines number of threads to be used. Defaults to 0 which means that it
 #'        corresponds to the number of available cores.
-#' @param as if not empty, the integer vector of active sets indices. No MCMC is run in this case. Just the log likelihood for a given sets assignment is returned.
+#' @param as if not empty, the integer vector of active sets indices. No MCMC is run in this case.
+#'        Just the log likelihood for a given sets assignment is returned.
 #' @param debug specifies the debug level. Mainly for internal use.
 #' 
 #' @return an object of class \code{\link{MgsaMcmcResults}}.
@@ -143,7 +144,7 @@ mgsa.main.debug <- function(o, sets, population=NULL, debug=0, ...){
 		
 	}else{
 		if(class(population)!= class(o)){
-			stop("'population' must be NULL or have the same class as 'o'.")
+			stop(paste("'population' must be NULL or have the same class as 'o'. The given value is",population))
 		}
 		population <- sort(unique(population))
 	}
@@ -205,11 +206,11 @@ mgsa.main <- function(o, sets, population=NULL, ...){
 #' @param sets The sets. It can be an \code{\linkS4class{MgsaSets}} or a \code{list}. In this case, each list entry is a vector of type \code{numeric}, \code{integer}, \code{character}. See details.
 #' @param population The total population. Optional. A \code{numeric}, \code{integer} or \code{character} vector.
 #' Default to \code{NULL}. See details.
+#' @param p Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1].
 #' @param ... Optional arguments that are passed to the methods. Supported parameters are
 #' \describe{
 #'   \item{\code{alpha}}{Grid of values for the parameter alpha. Values represent probabilities of false-positive events and hence must be in [0,1]. \code{numeric}.}
 #'   \item{\code{beta}}{Grid of values for the parameter beta. Values represent probabilities of false-negative events and hence must be in [0,1]. \code{numeric}.}
-#'   \item{\code{p}}{Grid of values for the parameter p. Values represent probabilities of term activity and therefore must be in [0,1]. \code{numeric}.}
 #'   \item{\code{steps}}{The number of steps of each run of the MCMC sampler. \code{integer} of length 1. A recommended value is 1e6 or greater.}
 #'   \item{\code{burnin}}{The number of burn-in MCMC steps, until sample collecting begins. \code{integer} of length 1. A recommended value is half of total MCMC steps.}
 #'   \item{\code{thin}}{The sample collecting period. An \code{integer} of length 1. A recommended value is 100 to reduce autocorrelation of subsequently collected samples.}
@@ -239,7 +240,7 @@ mgsa.main <- function(o, sets, population=NULL, ...){
 #' @rdname mgsa-methods
 setGeneric(
 		name="mgsa",
-		def=function( o, sets, population=NULL, ...){
+		def=function( o, sets, population=NULL, p=seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10), ...){
 			standardGeneric("mgsa")
 		}
 )

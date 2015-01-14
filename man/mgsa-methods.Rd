@@ -8,22 +8,31 @@
 \alias{mgsa,numeric,list-method}
 \title{Performs an MGSA analysis}
 \usage{
-  mgsa(o, sets, population = NULL, ...)
+  mgsa(o, sets, population = NULL,
+    p = seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out = 10),
+    ...)
 
   \S4method{mgsa}{integer,list}(o, sets, population = NULL,
+    p = seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out = 10),
     ...)
 
   \S4method{mgsa}{numeric,list}(o, sets, population = NULL,
+    p = seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out = 10),
     ...)
 
   \S4method{mgsa}{character,list}(o, sets,
-    population = NULL, ...)
+    population = NULL,
+    p = seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out = 10),
+    ...)
 
   \S4method{mgsa}{logical,list}(o, sets, population = NULL,
+    p = seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out = 10),
     ...)
 
   \S4method{mgsa}{character,MgsaSets}(o, sets,
-    population = NULL, ...)
+    population = NULL,
+    p = seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out = 10),
+    ...)
 }
 \arguments{
   \item{o}{The observations. It can be a \code{numeric},
@@ -39,6 +48,10 @@
   \code{numeric}, \code{integer} or \code{character}
   vector. Default to \code{NULL}. See details.}
 
+  \item{p}{Grid of values for the parameter p. Values
+  represent probabilities of term activity and therefore
+  must be in [0,1].}
+
   \item{...}{Optional arguments that are passed to the
   methods. Supported parameters are \describe{
   \item{\code{alpha}}{Grid of values for the parameter
@@ -47,9 +60,6 @@
   \item{\code{beta}}{Grid of values for the parameter beta.
   Values represent probabilities of false-negative events
   and hence must be in [0,1]. \code{numeric}.}
-  \item{\code{p}}{Grid of values for the parameter p.
-  Values represent probabilities of term activity and
-  therefore must be in [0,1]. \code{numeric}.}
   \item{\code{steps}}{The number of steps of each run of
   the MCMC sampler. \code{integer} of length 1. A
   recommended value is 1e6 or greater.}
