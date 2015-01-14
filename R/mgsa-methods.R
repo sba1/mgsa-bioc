@@ -144,7 +144,7 @@ mgsa.main.debug <- function(o, sets, population=NULL, debug=0, ...){
 		
 	}else{
 		if(class(population)!= class(o)){
-			stop("'population' must be NULL or have the same class as 'o'.")
+			stop(paste("'population' must be NULL or have the same class as 'o'. The given value is",population))
 		}
 		population <- sort(unique(population))
 	}
