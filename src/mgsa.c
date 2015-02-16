@@ -1110,9 +1110,17 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	parameter_prior_sample(&cn.alpha,	cn.alpha_prior, mt);
 	parameter_prior_sample(&cn.beta,	cn.beta_prior, mt);
 	parameter_prior_sample(&cn.p,		cn.p_prior, mt);
-	for (i=0;i<number_of_sets;i++) {
-		if (genrand(mt) < 0.5) toggle_state(&cn,i);
-	}
+	for (i=0; i<number_of_sets; i++) {
+          if (genrand(mt) < 0.5) {
+            int el_ix;
+            for (el_ix=0; el_ix<sizes_of_sets[i]; ++el_ix) {
+              if (cn.observable[sets[i][el_ix]]) {
+                toggle_state(&cn, i);
+                break;
+              }
+            }
+          }
+        }
 
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
