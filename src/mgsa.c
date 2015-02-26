@@ -912,7 +912,7 @@ static void propose_state(struct context *cn, struct mcmc_params *params, struct
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
 
-	if (step >= 0.5 * params->nsteps_burnin || genrand(mt) <= params->flip_freq)
+	if (genrand(mt) <= params->flip_freq)
 	{
 		/* toggle inactive/active states */
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
@@ -1110,10 +1110,6 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	parameter_prior_sample(&cn.alpha,	cn.alpha_prior, mt);
 	parameter_prior_sample(&cn.beta,	cn.beta_prior, mt);
 	parameter_prior_sample(&cn.p,		cn.p_prior, mt);
-	for (i=0;i<number_of_sets;i++) {
-		if (genrand(mt) < 0.5) toggle_state(&cn,i);
-	}
-
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
 
