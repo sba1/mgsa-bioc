@@ -1110,9 +1110,16 @@ static struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_
 	parameter_prior_sample(&cn.alpha,	cn.alpha_prior, mt);
 	parameter_prior_sample(&cn.beta,	cn.beta_prior, mt);
 	parameter_prior_sample(&cn.p,		cn.p_prior, mt);
+
+	/* Disabled for now as it is not the way how the method was published
+	 * This should be made optional. Note however that we expect only few
+	 * terms to be on, so randomly switching on/off term seems not so
+	 * appropriate */
+#if 0
 	for (i=0;i<number_of_sets;i++) {
 		if (genrand(mt) < 0.5) toggle_state(&cn,i);
 	}
+#endif
 
 	score = get_score(&cn);
 	neighborhood_size = get_neighborhood_size(&cn);
