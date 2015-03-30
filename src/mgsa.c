@@ -912,7 +912,7 @@ static void propose_state(struct context *cn, struct mcmc_params *params, struct
 	cn->proposal_s1 = -1;
 	cn->proposal_s2 = -1;
 
-	if (step >= 0.5 * params->nsteps_burnin || genrand(mt) <= params->flip_freq)
+	if (genrand(mt) <= params->flip_freq)
 	{
 		/* toggle inactive/active states */
 		uint32_t proposal = (double)(genrand(mt) * possibilities);
