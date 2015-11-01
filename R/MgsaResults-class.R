@@ -328,7 +328,7 @@ setMethod(
 #' 
 #' Plot method for MgsaResults objects
 #' @importFrom graphics plot
-#' @param x a \code{\link{MgsaResults}} 
+#' @param x a \code{\linkS4class{MgsaResults}}
 #' @param y unused
 #' @param ... unused
 #' @exportMethod plot 

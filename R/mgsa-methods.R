@@ -51,7 +51,7 @@ mcmcSummary <- function(x){
 #'        Just the log likelihood for a given sets assignment is returned.
 #' @param debug specifies the debug level. Mainly for internal use.
 #' 
-#' @return an object of class \code{\link{MgsaMcmcResults}}.
+#' @return an object of class \code{\linkS4class{MgsaMcmcResults}}.
 #' 
 #' @keywords internal 
 #' @noRd
@@ -199,7 +199,7 @@ mgsa.main <- function(o, sets, population=NULL, p=seq(1 ,min(20,floor(length(set
 #' The lower limit is constrained to be lower than 0\.1 and the upper limit lower than 0\.3 independently of the total number of sets to make sure that complex solutions are penalized.
 #' Marginal posteriors of activity of each set are estimated using an MCMC sampler as described in Bauer et al., 2010.
 #' Because convergence of an MCM sampler is difficult to assess, it is recommended to run it several times (using \code{restarts}).
-#' If variations between runs are too large (see \code{\link{MgsaResults}}), the number of steps (\code{steps}) of each MCMC run should be increased.
+#' If variations between runs are too large (see \code{\linkS4class{MgsaResults}}), the number of steps (\code{steps}) of each MCMC run should be increased.
 #' 
 #' @title Performs an MGSA analysis
 #' 
@@ -221,9 +221,9 @@ mgsa.main <- function(o, sets, population=NULL, p=seq(1 ,min(20,floor(length(set
 #' }
 #' 
 #' @references Bauer S., Gagneur J. and Robinson P. GOing Bayesian: model-based gene set analysis of genome-scale data. Nucleic Acids Research (2010) \url{http://nar.oxfordjournals.org/content/38/11/3523.full}
-#' @return An \code{\link{MgsaMcmcResults}} object.
+#' @return An \code{\linkS4class{MgsaMcmcResults}} object.
 #' 
-#' @seealso \code{\link{MgsaResults}}, \code{\link{MgsaMcmcResults}}
+#' @seealso \code{\linkS4class{MgsaResults}}, \code{\linkS4class{MgsaMcmcResults}}
 #' @examples
 #' ## observing items A and B, with sets {A,B,C} and {B,C,D}
 #' mgsa(c("A", "B"), list(set1 = LETTERS[1:3], set2 = LETTERS[2:4]))
