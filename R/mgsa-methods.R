@@ -172,12 +172,13 @@ mgsa.main.debug <- function(o, sets, population=NULL, debug=0, ...){
 #' @param sets a list of sets. Each set is a vector that contains all the items. The vector
 #'        can be of any data type, for instance, integers or characters.
 #' @param population defines the set of item that should be considered for this calculation.
+#' @param p the grid defining the probability of a set to be active.
 #'
 #' @keywords internal
 #' @noRd
 
-mgsa.main <- function(o, sets, population=NULL, ...){
-	return(mgsa.main.debug(o,sets,population,...))
+mgsa.main <- function(o, sets, population=NULL, p=seq(1 ,min(20,floor(length(sets)/3)), length.out=10)/length(sets), ...){
+	return(mgsa.main.debug(o,sets,population=population,p=p, ...))
 }
 
 
