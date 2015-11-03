@@ -48,6 +48,7 @@ test_that("mgsa() works with explict p", {
   mgsa.result <- mgsa( 1:4, mgsa.simple@sets, debug=0, p = 0.2 )
 
   expect_is( mgsa.result, 'MgsaMcmcResults' )
+  expect_equal( pPost(mgsa.result)$value, c(0.2))
 } )
 
 test_that("mgsa() works with explict multiple p", {
