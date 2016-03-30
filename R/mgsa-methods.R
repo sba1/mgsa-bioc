@@ -79,6 +79,8 @@ mgsa.wrapper <- function(o, sets, n,
 					steps=steps, burnin=burnin, thin=thin, flip.freq=flip.freq,
 					restarts=restarts, threads=threads, as=as)
 	
+	if (is.null(raw)) stop("No results could be obtained")
+
 	# just return the score (this function is quite overloaded now..., perhaps it would be better to make a separate function)
 	if (length(as) > 0)
 	{
@@ -153,14 +155,16 @@ mgsa.main.debug <- function(o, sets, population=NULL, debug=0, ...){
 	## encoding (index mapping) of the elements
 	encode <- function(x){ match( intersect(x, population), population) }
 	sets <- lapply(sets, encode)
-	o <- encode(o)
+	no <- encode(o)
+
+	if (length(o) != 0 && length(no) == 0) warning("None of the observations mapped to items in the sets")
 
 	if (debug)
 	{
 		cat(paste("number of sets:",length(sets),"\n"))
 	}
 
-	return(mgsa.wrapper(o,sets,length(population),debug=debug,...))
+	return(mgsa.wrapper(no,sets,length(population),debug=debug,...))
 }
 
 #'
