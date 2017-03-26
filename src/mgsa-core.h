@@ -197,11 +197,12 @@ struct result
  * @param beta
  * @param p
  * @param mt pre-seeded structure used for random number generation.
+ * @param pointer to an int value that indicates that the operation should be aborted.
  */
 struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo,
 		struct mcmc_params *params,
 		struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
-		struct mt19937p *mt);
+		struct mt19937p *mt, volatile int *interrupted);
 
 
 #endif

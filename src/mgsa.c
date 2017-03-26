@@ -571,7 +571,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 			/* Run! */
 			r[run] = do_mgsa_mcmc(nsets, lset, lsets, INTEGER_VALUE(n),no,lo,
 							&params,
-							alpha_summary,beta_summary,p_summary, &mt);
+							alpha_summary,beta_summary,p_summary, &mt, &is_interrupted);
 
 			if (r[run].marg_set_activity) have_margs = 1;
 			if (r[run].alpha_summary) have_alphas = 1;
