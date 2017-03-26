@@ -15,8 +15,6 @@
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);.Call(\"mgsa_test\")" | R --vanilla)"
  */
 
-/*#define DEBUG*/
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -29,12 +27,6 @@
 
 #include "mgsa-core.h"
 #include "mt.h"
-
-/* Enable debugging */
-//#define DEBUG
-
-/* Define if file should be compiled as standalone (mainly for testing purposes) */
-/* #define STANDALONE */
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
@@ -789,20 +781,3 @@ void R_unload_mylib(DllInfo *info)
 {
 	/* Release resources. */
 }
-
-#ifdef STANDALONE
-
-int main(void)
-{
-	int t1[] = {0,1};
-	int t2[] = {1,2};
-	int o[] = {0,1};
-
-	int *sets[] = {t1,t2};
-	int sizes_of_sets[] = {sizeof(t1)/sizeof(t1[0]),sizeof(t2)/sizeof(t2[0])};
-
-	do_mgsa_mcmc(sets, sizes_of_sets, sizeof(sets)/sizeof(sets[0]), 3, o, sizeof(o)/sizeof(o[0]));
-
-}
-
-#endif
