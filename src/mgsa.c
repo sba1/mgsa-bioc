@@ -3,9 +3,7 @@
  *
  * @author Sebastian Bauer
  *
- * @note if you want to compile as standalone, invoke
- *
- *  "gcc mgsa.c -DSTANDALONE `R CMD config --cppflags` `R CMD config --ldflags` -o mgsa"
+ * @note
  *
  *  If you want to test using R something like
  *   "R CMD INSTALL ../workspace/mgsa/ && (echo "library(mgsa);sets<-list(c(1,2),c(3));names(sets)<-c(\"set 1\", \"set 2\");mgsa:::mgsa.trampoline(c(1,2),sets,3,steps=100,restarts=4)" | R --vanilla)"
