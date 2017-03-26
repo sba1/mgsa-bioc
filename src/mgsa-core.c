@@ -3,7 +3,11 @@
  *
  * @author Sebastian Bauer
  *
- * This implements the core of the MGSA algorithm
+ * This implements the core of the MGSA algorithm.
+ *
+ * You can compile a standalone version via:
+ *
+ *   gcc mgsa-core.c mt.c -DSTANDALONE -lm
  */
 
 /*#define DEBUG*/
