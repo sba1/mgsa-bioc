@@ -811,7 +811,7 @@ int main(void)
 	struct mt19937p mt = {0};
 	struct mcmc_params params = {0};
 
-	do_mgsa_mcmc(sets, sizes_of_sets, sizeof(sets)/sizeof(sets[0]), 3, o, sizeof(o)/sizeof(o[0]), &params, &alpha_summary, &beta_summary, &p_summary, &mt);
+	do_mgsa_mcmc(sets, sizes_of_sets, sizeof(sets)/sizeof(sets[0]), 3, o, sizeof(o)/sizeof(o[0]), &params, &alpha_summary, &beta_summary, &p_summary, &mt, NULL);
 }
 
 #endif
