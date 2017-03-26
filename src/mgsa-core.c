@@ -30,9 +30,6 @@
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
-/** Global variable which is set to 1, if thread has been interrupted */
-static int is_interrupted;
-
 #ifdef STANDALONE
 void *R_alloc(size_t n, int size)
 {
@@ -651,7 +648,7 @@ static void record_activity(struct context *cn, int64_t step, double score)
 struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, int n, int *o, int lo,
 		struct mcmc_params *params,
 		struct summary *alpha_summary, struct summary *beta_summary, struct summary *p_summary,
-		struct mt19937p *mt)
+		struct mt19937p *mt, volatile int *is_interrupted)
 {
 	int i;
 	int64_t step;
@@ -732,7 +729,7 @@ struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, i
 
 		/* Break, if we are interrupted (we cannot use R_CheckUserInterrupt() here,
 		 * as this is not thread-safe */
-		if (is_interrupted) break;
+		if (is_interrupted && *is_interrupted) break;
 
 		propose_state(&cn, params, mt, step);
 		new_score = get_score(&cn);
