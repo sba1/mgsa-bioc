@@ -31,7 +31,7 @@
 #include <omp.h>
 #endif
 
-#include "mt19937p/mt19937p.c"
+#include "mt.h"
 
 /* Enable debugging */
 //#define DEBUG
