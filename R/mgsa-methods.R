@@ -307,12 +307,12 @@ setMethod(
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, ...)
+				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, p=p, ...)
 			}
 			else
 			{
 				population<-itemIndices(sets,population)
-				rv = mgsa.main( items, sets@sets, population, ...)
+				rv = mgsa.main( items, sets@sets, population, p=p, ...)
 			}
 			rv@setsResults = cbind(setsResults(rv),  setAnnotations(sets)[ rownames(setsResults(rv) ), , drop=FALSE] )
 			return( rv )
