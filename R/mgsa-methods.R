@@ -290,7 +290,8 @@ setMethod(
 setMethod(
 		f="mgsa",
 		signature = c(o="character", sets="MgsaSets"),
-		def=function( o, sets, population=NULL, ...) {
+		def=function( o, sets, population=NULL, 
+			      p=seq(min(0.1, 1/length(sets)), min(0.3, 20/length(sets)), length.out=10), ...) {
 			
 			items<-itemIndices(sets,o)
 			items.nas<-sum(is.na(items))
@@ -306,12 +307,12 @@ setMethod(
 			{
 				# If no population has been specified, we do not need
 				# to consolidate the set and obervation ids
-				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, ...)
+				rv = mgsa.wrapper(items, sets@sets, sets@numberOfItems, p=p, ...)
 			}
 			else
 			{
 				population<-itemIndices(sets,population)
-				rv = mgsa.main( items, sets@sets, population, ...)
+				rv = mgsa.main( items, sets@sets, population, p=p, ...)
 			}
 			rv@setsResults = cbind(setsResults(rv),  setAnnotations(sets)[ rownames(setsResults(rv) ), , drop=FALSE] )
 			return( rv )
