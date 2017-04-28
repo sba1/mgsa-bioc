@@ -23,6 +23,10 @@
 #include <R_ext/Rdynload.h>
 #include <R_ext/Utils.h>
 
+#ifdef SUPPORT_OPENMP
+#include <omp.h>
+#endif
+
 #include "mgsa-core.h"
 #include "mt.h"
 
