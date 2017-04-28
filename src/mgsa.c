@@ -53,7 +53,7 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int disc
 	int i;
 	struct parameter_prior *p;
 
-	if (!(p = R_alloc(1,sizeof(*p))))
+	if (!(p = (struct parameter_prior*)R_alloc(1,sizeof(*p))))
 		return NULL;
 
 	PROTECT(sexp = AS_NUMERIC(sexp));
@@ -66,7 +66,7 @@ static struct parameter_prior *create_parameter_prior_from_R(SEXP sexp, int disc
 		if (p->number_of_states == 0)
 			error("Parameter '%s' has been requested to be discrete but no values were specified");
 
-		if (!(p->values = R_alloc(p->number_of_states,sizeof(p->values[0]))))
+		if (!(p->values = (double*)R_alloc(p->number_of_states,sizeof(p->values[0]))))
 			return NULL;
 
 		for (i=0;i<p->number_of_states;i++)
@@ -178,7 +178,7 @@ static struct summary *create_summary_for_param_from_R(struct parameter_prior *p
 		if (!(init_summary_for_breaks(sum,number_of_discrete_values)))
 			error("Couldn't allocate memory!");
 
-		if (!(sum->dmap = R_alloc(number_of_discrete_values,sizeof(sum->dmap[0]))))
+		if (!(sum->dmap = (int*)R_alloc(number_of_discrete_values,sizeof(sum->dmap[0]))))
 			error("Couldn't allocate memory!");
 
 		if (!default_range)
@@ -408,7 +408,7 @@ SEXP mgsa_mcmc(SEXP sets, SEXP n, SEXP o,
 	las = LENGTH(as);
 	if (las > 0)
 	{
-		nas = R_alloc(las,sizeof(nas[0]));
+		nas = (int*)R_alloc(las,sizeof(nas[0]));
 
 		for (i=0;i<las;i++)
 		{
