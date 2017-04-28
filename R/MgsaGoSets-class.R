@@ -137,6 +137,9 @@ readGAF = function(filename, evidence=NULL, aspect=c("P", "F", "C")){
 	## reading the file
 	goa = read.delim(gzfile(filename), na.strings = "", header=FALSE, comment.char = "!", sep="\t")
 	
+	## remove associations with NOT qualifiers
+	goa <- goa[goa$V4 != "NOT" | is.na(goa$V4) > 0,]
+
 	goa = na.omit( 
 			data.frame ( 
 					go.ids = goa[,go.id.col],
