@@ -793,10 +793,12 @@ struct result do_mgsa_mcmc(int **sets, int *sizes_of_sets, int number_of_sets, i
 }
 
 
+#ifdef DEBUG
 static void print_context(struct context *cn)
 {
 	printf("n00=%d n01=%d n10=%d n11=%d num_active=%d\n",cn->n00,cn->n01,cn->n10,cn->n11,cn->number_of_sets - cn->number_of_inactive_sets);
 }
+#endif
 
 #ifdef STANDALONE
 
